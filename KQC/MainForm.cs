@@ -40,7 +40,6 @@ namespace KQC
                 {
                     var text = (string)i.GetData(DataFormats.Text);
                     button1.Text = text;
-                    notifyIcon1.Text = "KQC: Click to check '" + text + "'";
                 } 
             }
         }

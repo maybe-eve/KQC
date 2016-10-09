@@ -64,7 +64,7 @@ namespace KQC
 		    // notifyIcon1
 		    // 
 		    this.notifyIcon1.Icon = ((System.Drawing.Icon)(resources.GetObject("notifyIcon1.Icon")));
-		    this.notifyIcon1.Text = "KQC: Click to check \'Sample PlayerName\'";
+		    this.notifyIcon1.Text = "KQC: Click to check";
 		    this.notifyIcon1.Visible = true;
 		    this.notifyIcon1.Click += new System.EventHandler(this.Button1Click);
 		    // 
