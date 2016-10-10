@@ -4,6 +4,8 @@
 
 KQC is a frontend for [CVA KOS - Kill On Sight](http://kos.cva-eve.org/).
 
+(Thanks very much for providing the API!)
+
 ## System requirements
 
 * .NET Framework 4.0 or above
@@ -14,10 +16,14 @@ KQC is a frontend for [CVA KOS - Kill On Sight](http://kos.cva-eve.org/).
 
 2. Push the button (or the notification icon).
 
-3. KOS! / Not KOS! / No Result Found!
+3. KOS! / Not KOS! / No Results Found!
 
 ## Who are you?
 
 [Mayvie Takashina](https://zkillboard.com/character/96773588/).
 
 Give me some ISK!!
+
+## License
+
+KQC is licensed under the GPL 3.0.
