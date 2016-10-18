@@ -18,13 +18,16 @@ using System;
 using System.Windows.Forms;
 using System.IO;
 using System.Diagnostics;
+using System.Reactive;
+using System.Reactive.Linq;
+using KQC.Backend;
 
 namespace KQC
 {
-    internal sealed class Program
+    public sealed class Program
     {
         [STAThread]
-        private static void Main(string[] args)
+        public static void Main(string[] args)
         {
             try
             {

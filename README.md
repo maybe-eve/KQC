@@ -2,13 +2,21 @@
 
 ## What's this?
 
-KQC is a frontend for [CVA KOS - Kill On Sight](http://kos.cva-eve.org/).
+KQC is a frontend software for [CVA KOS - Kill On Sight](http://kos.cva-eve.org/).
 
-(Thanks very much for providing the API!)
+Checking [zKillboard](https://zkillboard.com) and [Eve Who](http://evewho.com), KQC can determine whether a player is RBL or not. (automatically!)
 
-## System requirements
+Also, KQC fetches the number of kills he/she have made, and whether in Providence or not. (automatically!!)
 
-* .NET Framework 4.0 or above
+You can do this just with Ctrl+C and one click.
+
+(Thanks to the developers of those websites for providing API!)
+
+## Screenshots
+
+![No KOS results? No problem.](http://i.imgur.com/p6y6Amo.png)
+
+![He seems not red... Oops, he is RBL!](http://i.imgur.com/XA7dwnZ.png)
 
 ## How to use
 
@@ -16,13 +24,25 @@ KQC is a frontend for [CVA KOS - Kill On Sight](http://kos.cva-eve.org/).
 
 2. Push the button (or the notification icon).
 
-3. KOS! / Not KOS! / No Results Found!
+3. Smile. (or panic. (DON'T PANIC.))
+
+## System requirements
+
+* .NET Framework 4.5.2 or above (the latest is highly recommended!)
+
+## For developers and Linux/Mac (Mono) hackers
+
+KQC.exe is just a GUI frontend. You can use all the features by adding KQC.Backend.dll (only depends on fsharp and rx) to your reference.
+
+```EVE.fullCheckSource(string name)``` returns ```IObservable<Message>```, so you can cook it in Reactive Extensions.
+
+There are also a lot of tasty methods inside ```module EVE```. See EVE.fs for details.
 
 ## Who are you?
 
 [Mayvie Takashina](https://zkillboard.com/character/96773588/).
 
-Give me some ISK!!
+Japanene noob. Give me some ISK!!
 
 ## License
 

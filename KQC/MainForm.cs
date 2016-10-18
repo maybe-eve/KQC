@@ -17,10 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
-using System.Net;
-using System.IO;
-using System.Text;
-using Newtonsoft.Json;
 
 namespace KQC
 {
@@ -46,11 +42,9 @@ namespace KQC
         protected override void WndProc(ref Message m)
         {
             base.WndProc(ref m);
-            if (m.Msg == WM_CLIPBOARDUPDATE) 
-            {
+            if (m.Msg == WM_CLIPBOARDUPDATE) {
                 var i = Clipboard.GetDataObject();
-                if (i.GetDataPresent(DataFormats.Text)) 
-                {
+                if (i.GetDataPresent(DataFormats.Text)) {
                     var text = (string)i.GetData(DataFormats.Text);
                     button1.Text = text;
                 } 
@@ -69,32 +63,7 @@ namespace KQC
         
         void Button1Click(object sender, EventArgs e)
         {
-            var pn = button1.Text.Replace(' ', '+');
-            var u = string.Format("http://kos.cva-eve.org/api/?c=json&type=unit&q={0}", pn);
-            var wr = WebRequest.Create(u);
-            var r = "";
-            using(var rs = wr.GetResponse())
-                using(var st = rs.GetResponseStream())
-                    using(var sr = new StreamReader(st, Encoding.UTF8))
-                        r = sr.ReadToEnd();
-            dynamic ro = JsonConvert.DeserializeObject(r);
-            
-            if(ro.results.Count == 0)
-            {
-                MessageBox.Show("No Results Found", button1.Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-            var plyr = (bool)ro.results[0].kos;
-            var corp = (bool)ro.results[0].corp.kos;
-            var ally = (bool)ro.results[0].corp.alliance.kos;
-            if(plyr || corp || ally)
-            {
-                MessageBox.Show(string.Format("KOS\n\nPlayer:   {0}\nCorp:     {1}\nAlliance: {2}", toKos(plyr), toKos(corp), toKos(ally)), button1.Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            }
-            else
-            {
-                MessageBox.Show("Not KOS", button1.Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
-            }
+            new AnalyzeResult(button1.Text).Show();
         }
 
     }
