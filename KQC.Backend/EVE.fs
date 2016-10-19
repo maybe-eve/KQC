@@ -250,10 +250,6 @@ module EVE =
                 obs.OnNext(Text (sprintf "This player has killed %i ship(s) in this week." c));
                 rl.Add Reason.TrigHappy
 
-              if isNpcCorp (who.Info.CorporationId) then
-                obs.OnNext(Text "This player is a member of a NPC corp.");
-                rl.Add Reason.NPCCorp
-
               let hist = who.History in
 
               let d = (DateTime.Now - (Seq.head hist).StartDate).Days in
@@ -284,28 +280,30 @@ module EVE =
                   | Some _ | None ->
                     ()
 
-              let hr = hist |> Seq.rev |> SeqX.skipSafe 1 |> SeqX.skipWhileSafe (fun x -> isNpcCorp x.CorporationId) in
-              if Seq.length hr > 0 then
-                let l = (Seq.head hr).CorporationId |> eveWhoCorp in
-                let lrs = checkKosByName l.Info.Name in
-                let lr = 
-                  lrs 
-                  |> Seq.choose (fun x -> 
-                    match x with 
-                      | Corp(_,_,_,_,_) -> Some x 
-                      | _ -> None
-                  )
-                  |> Seq.tryFind (fun x -> (getName x) = l.Info.Name) 
-                in
-                match lr with
-                  | Some(Corp(cn, _, isKos, Ally(an, _, aIsKos, _), _)) ->
-                    for x in flatKR lr.Value do
-                      obs.OnNext(Kos x);
-                    if isKos || aIsKos then
-                      obs.OnNext(Text (sprintf "This player is RBL because his/her last player corp \"%s\" is KOS." cn));
-                      rl.Add Reason.RBL
-                        
-                  | _ -> ()
+              if isNpcCorp (who.Info.CorporationId) then
+                obs.OnNext(Text "This player is a member of a NPC corp.");
+                rl.Add Reason.NPCCorp
+                let hr = hist |> Seq.rev |> SeqX.skipSafe 1 |> SeqX.skipWhileSafe (fun x -> isNpcCorp x.CorporationId) in
+                if Seq.length hr > 0 then
+                  let l = (Seq.head hr).CorporationId |> eveWhoCorp in
+                  let lrs = checkKosByName l.Info.Name in
+                  let lr = 
+                    lrs 
+                    |> Seq.choose (fun x -> 
+                      match x with 
+                        | Corp(_,_,_,_,_) -> Some x 
+                        | _ -> None
+                    )
+                    |> Seq.tryFind (fun x -> (getName x) = l.Info.Name) 
+                  in
+                  match lr with
+                    | Some(Corp(cn, _, isKos, Ally(an, _, aIsKos, _), _)) ->
+                      for x in flatKR lr.Value do
+                        obs.OnNext(Kos x);
+                      if isKos || aIsKos then
+                        obs.OnNext(Text (sprintf "This player is RBL because his/her last player corp \"%s\" is KOS." cn));
+                        rl.Add Reason.RBL
+                    | _ -> ()
 
               if rl.Contains(Reason.KOS) || rl.Contains(Reason.RBL) then
                 obs.OnNext(Jud (Judge.Threat (List.ofSeq rl)))
