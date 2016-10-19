@@ -16,7 +16,7 @@ You can do this just with Ctrl+C and one click.
 
 ![No KOS results? No problem.](http://i.imgur.com/p6y6Amo.png)
 
-![He seems not red... Oops, he is RBL!](http://i.imgur.com/XA7dwnZ.png)
+![He seems not red... Oops, he is RBL!](http://i.imgur.com/aMWZizp.png)
 
 ## How to use
 
@@ -37,6 +37,12 @@ KQC.exe is just a GUI frontend. You can use all the features by adding KQC.Backe
 ```EVE.fullCheckSource(string name)``` returns ```IObservable<Message>```, so you can cook it in Reactive Extensions.
 
 There are also a lot of tasty methods inside ```module EVE```. See EVE.fs for details.
+
+## Disclaimer
+
+I don't (can't) guarantee this software to be always accurate.
+
+Use at your own risk, and beware of your enemies all the time.
 
 ## Who are you?
 

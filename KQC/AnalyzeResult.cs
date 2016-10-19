@@ -21,6 +21,7 @@ using System.Reactive.Linq;
 using KQC.Backend;
 using System.Threading;
 using System.Reactive.Concurrency;
+using System.Reactive.Subjects;
 
 namespace KQC
 {
@@ -33,9 +34,15 @@ namespace KQC
         {
             name = _name;
             InitializeComponent();
+#if DEBUG
+            this.Text = pNameLabel.Text = "Sample Bad Guy";
+            s = EVE.dummyCheckSource();
+#else
+            s = EVE.fullCheckSource(name).Publish().RefCount();
             this.Text = name;
-            s = EVE.fullCheckSource(name);
             pNameLabel.Text = name;
+#endif
+
             judgeTextBox.Text = "JUDGING";
             judgeTextBox.ForeColor = Color.White;
             judgeTextBox.BackColor = Color.LightBlue;
@@ -43,63 +50,70 @@ namespace KQC
 
         private void AnalyzeResult_Shown(object sender, EventArgs e)
         {
-            var t = NewThreadScheduler.Default;
-            s.SubscribeOn(t)
-               .ObserveOn(SynchronizationContext.Current)
-               .Subscribe(x =>
-               {
-                   if (x is EVE.Message.Kos)
-                   {
-                       var k = (x as EVE.Message.Kos).Item;
-                       if (k.IsNotFound)
-                           listView1.Items.Add(new ListViewItem(new[] { EVE.getName(k), "Not found"}));
-                       else
-                           listView1.Items.Add(new ListViewItem(new[] { EVE.getName(k) + " (" + EVE.getType(k) + ")", EVE.isKos(k) ? "KOS" : "Not KOS" }));
-                   }
-                   if (x is EVE.Message.Text)
-                   {
-                       detailTextBox.Text += (x as EVE.Message.Text).Item + Environment.NewLine;
-                   }
-                   else if (x is EVE.Message.CharaIcon)
-                   {
-                       var uri = (x as EVE.Message.CharaIcon).Item;
-                       pictureBox1.LoadAsync(uri);
-                   }
-                   else if (x is EVE.Message.Jud)
-                   {
-                       var j = (x as EVE.Message.Jud).Item;
-                       if (j.IsThreat)
-                       {
-                           judgeTextBox.Text = "THREAT";
-                           judgeTextBox.ForeColor = Color.White;
-                           judgeTextBox.BackColor = Color.Black;
-                       }
-                       else if (j.IsDanger)
-                       {
-                           judgeTextBox.Text = "DANGER";
-                           judgeTextBox.ForeColor = Color.White;
-                           judgeTextBox.BackColor = Color.Red;
-                       }
-                       else if (j.IsCaution)
-                       {
-                           judgeTextBox.Text = "CAUTION";
-                           judgeTextBox.ForeColor = Color.Black;
-                           judgeTextBox.BackColor = Color.Yellow;
-                       }
-                       else if (j.IsSafe)
-                       {
-                           judgeTextBox.Text = "SAFE";
-                           judgeTextBox.ForeColor = Color.White;
-                           judgeTextBox.BackColor = Color.Green;
-                       }
-                       else if (j.IsNoInformation)
-                       {
-                           judgeTextBox.Text = "NO INFO";
-                           judgeTextBox.ForeColor = Color.White;
-                           judgeTextBox.BackColor = Color.Blue;
-                       }
-                   }
-               });
+            var p = s.SubscribeOn(NewThreadScheduler.Default)
+                     .ObserveOn(SynchronizationContext.Current);
+
+            p.OfType<EVE.Message.Kos>()
+             .Select(x => x.Item)
+             .Subscribe(k =>
+             {
+                 if (k.IsNotFound)
+                     listView1.Items.Add(new ListViewItem(new[] { EVE.getName(k), "Not found" }));
+                 else
+                     listView1.Items.Add(new ListViewItem(new[] { EVE.getName(k) + " (" + EVE.getType(k) + ")", EVE.isKos(k) ? "KOS" : "Not KOS" }));
+             });
+
+            p.OfType<EVE.Message.Text>()
+             .Select(x => x.Item)
+             .Subscribe(x =>
+             {
+                 detailTextBox.Text += x + Environment.NewLine;
+             });
+
+            p.OfType<EVE.Message.CharaIcon>()
+             .Select(x => x.Item)
+             .Subscribe(x =>
+             {
+                 pictureBox1.LoadAsync(x);
+             });
+
+            p.OfType<EVE.Message.Jud>()
+             .Select(x => x.Item)
+             .Subscribe(j =>
+             {
+                 if (j.IsThreat)
+                 {
+                     judgeTextBox.Text = "THREAT";
+                     judgeTextBox.ForeColor = Color.White;
+                     judgeTextBox.BackColor = Color.Black;
+                 }
+                 else if (j.IsDanger)
+                 {
+                     judgeTextBox.Text = "DANGER";
+                     judgeTextBox.ForeColor = Color.White;
+                     judgeTextBox.BackColor = Color.Red;
+                 }
+                 else if (j.IsCaution)
+                 {
+                     judgeTextBox.Text = "CAUTION";
+                     judgeTextBox.ForeColor = Color.Black;
+                     judgeTextBox.BackColor = Color.Yellow;
+                 }
+                 else if (j.IsSafe)
+                 {
+                     judgeTextBox.Text = "SAFE";
+                     judgeTextBox.ForeColor = Color.White;
+                     judgeTextBox.BackColor = Color.Green;
+                 }
+                 else if (j.IsNoInformation)
+                 {
+                     judgeTextBox.Text = "NO INFO";
+                     judgeTextBox.ForeColor = Color.White;
+                     judgeTextBox.BackColor = Color.Blue;
+                 }
+             });
+
+            
         }
 
         private void listView1_ColumnWidthChanging(object sender, ColumnWidthChangingEventArgs e)

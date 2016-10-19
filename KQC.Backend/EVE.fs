@@ -155,10 +155,8 @@ module EVE =
 
     let checkProviKills id =
       try
-        let u = sprintf "https://zkillboard.com/character/kills/%i" id in
-        let p = "<a href=\"/region/10000047/\">Providence</a>" in
-        let res = reqString u in
-        res.Contains p
+        let res = reqString "https://zkillboard.com/api/kills/regionID/10000047/pastSeconds/604800/" in
+        id.ToString() |> res.Contains
       with
         | _ -> false
 
@@ -172,6 +170,22 @@ module EVE =
 
     let getIconUriById id =
       sprintf "https://image.eveonline.com/Character/%i_64.jpg" id
+
+    let dummyCheckSource () =
+      Observable.Create<Message>((fun (obs : IObserver<Message>) ->
+        for k in flatKR (KosResult.Player("Sample Bad Guy", false, KosResult.Corp("NPC Corp", "NPC-Z", false, KosResult.Ally("None", "", false, 0), 0), 9680952)) do
+          obs.OnNext(Kos k);
+        obs.OnNext(CharaIcon (getIconUriById 96809520));
+        obs.OnNext(Text "This player has killed someone in Providence recently.");
+        obs.OnNext(Text (sprintf "This player has killed %i ship(s) in this week." 42));
+        obs.OnNext(Text "This player is a member of a NPC corp.");
+        for k in flatKR (KosResult.Corp("Pirates Inc.", "NPC-Z", false, KosResult.Ally("Outlaw Alliance", "", true, 0), 0)) do
+          obs.OnNext(Kos k);
+        obs.OnNext(Text (sprintf "This player is RBL because his/her last player corp \"%s\" is KOS." "Pirates Inc."));
+        obs.OnNext(Jud (Judge.Threat []));
+        obs.OnCompleted();
+        Action(fun () -> ())
+      ))
       
     let fullCheckSource name =
       Observable.Create<Message>((fun (obs : IObserver<Message>) ->
@@ -265,7 +279,7 @@ module EVE =
                     for x in flatKR lr.Value do
                       obs.OnNext(Kos x);
                     if isKos || aIsKos then
-                      obs.OnNext(Text (sprintf "His corp \"%s\" is KOS. Thus he is KOS." cn));
+                      obs.OnNext(Text (sprintf "This player is KOS because his/her corp \"%s\" is KOS." cn));
                       rl.Add Reason.RBL
                   | Some _ | None ->
                     ()
@@ -288,7 +302,7 @@ module EVE =
                     for x in flatKR lr.Value do
                       obs.OnNext(Kos x);
                     if isKos || aIsKos then
-                      obs.OnNext(Text (sprintf "His last player corp \"%s\" is KOS. Thus he is RBL." cn));
+                      obs.OnNext(Text (sprintf "This player is RBL because his/her last player corp \"%s\" is KOS." cn));
                       rl.Add Reason.RBL
                         
                   | _ -> ()
