@@ -141,7 +141,10 @@ namespace KQC
             this.Controls.Add(this.pictureBox1);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
             this.Name = "AnalyzeResult";
+            this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
             this.Text = "AnalyzeResult";
             this.TopMost = true;
             this.Shown += new System.EventHandler(this.AnalyzeResult_Shown);

@@ -63,7 +63,10 @@ namespace KQC
         
         void Button1Click(object sender, EventArgs e)
         {
-            new AnalyzeResult(button1.Text).Show();
+            var a = new AnalyzeResult(button1.Text);
+            a.StartPosition = FormStartPosition.Manual;
+            a.Location = this.Location;
+            a.Show();
         }
 
     }

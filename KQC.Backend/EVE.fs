@@ -70,9 +70,6 @@ module EVE =
 
     let print a =
       sprintf "%A" a
-
-    let isNpcCorp id =
-      id >= 1000002 && id <= 1000182
     
     let isKos (kr : KosResult) =
       match kr with
@@ -153,6 +150,11 @@ module EVE =
       let res = reqString u in
       EveWhoCorp.Parse res
 
+    let isNpcCorp id =
+      //id >= 1000002 && id <= 1000182
+      let w = eveWhoCorp id in
+      w.Info.IsNpcCorp <> 0
+
     let checkProviKills id =
       try
         let res = reqString "https://zkillboard.com/api/kills/regionID/10000047/pastSeconds/604800/" in
@@ -164,7 +166,15 @@ module EVE =
       try
         let u = sprintf "https://zkillboard.com/api/kills/characterID/%i/pastSeconds/604800/" id in
         let res = reqString u in
-        Regex.Matches(res, "killID").Count
+        let q = "killID" in
+        let rec count c (i : int) =
+          let i' = res.IndexOf(q, i) in
+          if i' <> -1 then
+            count (c + 1) i'
+          else
+            c
+        in count 0 0
+        //Regex.Matches(res, "killID").Count
       with
         | _ -> 0
 
@@ -189,130 +199,138 @@ module EVE =
       
     let fullCheckSource name =
       Observable.Create<Message>((fun (obs : IObserver<Message>) ->
-        let mutable isUnknown = true in
-        let rs = checkKosByName name in
-        let r = 
-          rs  
-          |> Seq.choose (fun x -> 
-            match x with 
-              | Player(_,_,_,_) -> Some x 
-              | _ -> None
-          )
-          |> Seq.tryFind (fun x -> (getName x) = name) in
-        let id = 
-          if r.IsNone then
-            obs.OnNext (Text "No KOS results found.");
-            obs.OnNext (Kos (KosResult.NotFound name));
-            getEveIdByName name
-          else
-            isUnknown <- false;
-            let ks = flatKR r.Value in
-            let mutable f = false in
-            let mutable p = None in
-            for k in ks do
-              f <- isKos k || f;
-              obs.OnNext(Kos k);
-              match k with
-                | Player(_, _, _, _) -> p <- Some k
-                | _ -> ()
-            if f then
-              p |> Option.map (function | Player(_, _, _, id) -> id | _ -> 0)
-                |> Option.filter ((<>) 0)
-                |> Option.iter (fun id -> obs.OnNext(CharaIcon (getIconUriById id)));
-              obs.OnNext (Jud(Judge.Threat [Reason.KOS])); -1
+        try
+          let rs = checkKosByName name in
+          let r = 
+            rs  
+            |> Seq.choose (fun x -> 
+              match x with 
+                | Player(_,_,_,_) -> Some x 
+                | _ -> None
+            )
+            |> Seq.tryFind (fun x -> (getName x) = name) in
+          let (id, corpId) = 
+            if r.IsNone then
+              obs.OnNext (Text "No KOS results found.");
+              obs.OnNext (Kos (KosResult.NotFound name));
+              (getEveIdByName name, None)
             else
-              match p with
-                | Some (Player(_, _, corp, id)) -> 
-                  id
-                | Some(_)
-                | None -> obs.OnNext (Jud Judge.Safe); -1
-        in
-        match id with
-          | 0 ->
-            obs.OnNext (Text "This user doesn't exist.");
-            obs.OnNext (Jud Judge.NoInformation)
-          | -1 -> ()
-          | id ->
-            obs.OnNext(CharaIcon (getIconUriById id));
-            let who = eveWho id in
-
-            if who.History.Length = 0 then
+              let ks = flatKR r.Value in
+              let mutable f = false in
+              let mutable p = None in
+              for k in ks do
+                f <- isKos k || f;
+                obs.OnNext(Kos k);
+                match k with
+                  | Player(_, _, _, _) -> p <- Some k
+                  | _ -> ()
+              if f then
+                p |> Option.map (function | Player(_, _, _, id) -> id | _ -> 0)
+                  |> Option.filter ((<>) 0)
+                  |> Option.iter (fun id -> obs.OnNext(CharaIcon (getIconUriById id)));
+                obs.OnNext (Jud(Judge.Threat [Reason.KOS])); (-1, None)
+              else
+                match p with
+                  | Some (Player(_, _, Corp(_, _, _, _, corpId), id)) -> 
+                    (id, Some corpId)
+                  | Some(_)
+                  | None -> obs.OnNext (Jud Judge.Safe); (-1, None)
+          in
+          match id with
+            | 0 ->
               obs.OnNext (Text "This user doesn't exist.");
               obs.OnNext (Jud Judge.NoInformation)
-            else
-              let rl = List<Reason>() in
-              if (checkProviKills id) then
-                obs.OnNext(Text "This player has killed someone in Providence recently.");
-                rl.Add Reason.KillInProvi
-            
-              let c = checkRecentKillCount id in
-              if c > 0 then
-                obs.OnNext(Text (sprintf "This player has killed %i ship(s) in this week." c));
-                rl.Add Reason.TrigHappy
+            | -1 -> ()
+            | id ->
+              obs.OnNext(CharaIcon (getIconUriById id));
+              let who = eveWho id in
 
-              let hist = who.History in
-
-              let d = (DateTime.Now - (Seq.head hist).StartDate).Days in
-              if d < 14 then
-                obs.OnNext(Text (sprintf "This player is only %i day(s) old." d));
-                rl.Add Reason.TooYoung
-
-              if isUnknown then
-                let l = (hist |> Seq.last).CorporationId |> eveWhoCorp in
-                let lrs = checkKosByName l.Info.Name in
-                let lr = 
-                  lrs 
-                  |> Seq.choose (fun x -> 
-                    match x with 
-                      | Corp(_,_,_,_,_) -> Some x 
-                      | _ -> None
-                  )
-                  |> Seq.tryFind (fun x -> (getName x) = l.Info.Name) 
-                in
-                match lr with
-                  | Some(Corp(cn, _, isKos, Ally(an, _, aIsKos, _), _)) ->
-                    isUnknown <- false;
-                    for x in flatKR lr.Value do
-                      obs.OnNext(Kos x);
-                    if isKos || aIsKos then
-                      obs.OnNext(Text (sprintf "This player is KOS because his/her corp \"%s\" is KOS." cn));
-                      rl.Add Reason.RBL
-                  | Some _ | None ->
-                    ()
-
-              if isNpcCorp (who.Info.CorporationId) then
-                obs.OnNext(Text "This player is a member of a NPC corp.");
-                rl.Add Reason.NPCCorp
-                let hr = hist |> Seq.rev |> SeqX.skipSafe 1 |> SeqX.skipWhileSafe (fun x -> isNpcCorp x.CorporationId) in
-                if Seq.length hr > 0 then
-                  let l = (Seq.head hr).CorporationId |> eveWhoCorp in
-                  let lrs = checkKosByName l.Info.Name in
-                  let lr = 
-                    lrs 
-                    |> Seq.choose (fun x -> 
-                      match x with 
-                        | Corp(_,_,_,_,_) -> Some x 
-                        | _ -> None
-                    )
-                    |> Seq.tryFind (fun x -> (getName x) = l.Info.Name) 
-                  in
-                  match lr with
-                    | Some(Corp(cn, _, isKos, Ally(an, _, aIsKos, _), _)) ->
-                      for x in flatKR lr.Value do
-                        obs.OnNext(Kos x);
-                      if isKos || aIsKos then
-                        obs.OnNext(Text (sprintf "This player is RBL because his/her last player corp \"%s\" is KOS." cn));
-                        rl.Add Reason.RBL
-                    | _ -> ()
-
-              if rl.Contains(Reason.KOS) || rl.Contains(Reason.RBL) then
-                obs.OnNext(Jud (Judge.Threat (List.ofSeq rl)))
-              else if isUnknown && (rl.Contains(Reason.KillInProvi) || rl.Contains(Reason.TrigHappy)) then
-                obs.OnNext(Jud (Judge.Danger (List.ofSeq rl)))
-              else if isUnknown || rl.Contains(Reason.NPCCorp) || rl.Contains(Reason.TooYoung) then
-                obs.OnNext(Jud (Judge.Caution (List.ofSeq rl)))
+              if who.JsonValue.Item("info") = JsonValue.Null then
+                obs.OnNext (Text "This user doesn't exist.");
+                obs.OnNext (Jud Judge.NoInformation)
               else
-                obs.OnNext(Jud Judge.Safe)
+                let rl = List<Reason>() in
+
+                let c = checkRecentKillCount id in
+                if c > 0 then
+                  obs.OnNext(Text (sprintf "This player has killed %i ship(s) in this week." c));
+                  rl.Add Reason.TrigHappy;
+                  if (checkProviKills id) then
+                    obs.OnNext(Text "This player has killed someone in Providence recently.");
+                    rl.Add Reason.KillInProvi
+
+                let hist = who.History in
+
+                let d = (DateTime.Now - (Seq.head hist).StartDate).Days in
+                if d < 14 then
+                  obs.OnNext(Text (sprintf "This player is only %i day(s) old." d));
+                  rl.Add Reason.TooYoung
+
+                let isUnknown = 
+                  if corpId.IsNone then
+                    obs.OnNext(Text ("Fetching data from EveWho..." + Environment.NewLine + "(can be outdated!)"));
+                    let l = (hist |> Seq.last).CorporationId |> eveWhoCorp in
+                    let lrs = checkKosByName l.Info.Name in
+                    let lr = 
+                      lrs 
+                      |> Seq.choose (fun x -> 
+                        match x with 
+                          | Corp(_,_,_,_,_) -> Some x 
+                          | _ -> None
+                      )
+                      |> Seq.tryFind (fun x -> (getName x) = l.Info.Name) 
+                    in
+                    match lr with
+                      | Some(Corp(cn, _, isKos, Ally(an, _, aIsKos, _), _)) ->
+                        for x in flatKR lr.Value do
+                          obs.OnNext(Kos x);
+                        if isKos || aIsKos then
+                          obs.OnNext(Text (sprintf "This player is KOS because his/her corp \"%s\" is KOS." cn));
+                          rl.Add Reason.RBL
+                        false
+                      | Some _ | None -> true
+                  else false
+
+                if isNpcCorp (defaultArg corpId who.Info.CorporationId) then
+                  obs.OnNext(Text "This player is a member of a NPC corp.");
+                  rl.Add Reason.NPCCorp
+                  let hr = hist |> Seq.rev |> SeqX.skipWhileSafe (fun x -> isNpcCorp x.CorporationId) in
+                  if Seq.length hr > 0 then
+                    let l = (Seq.head hr).CorporationId |> eveWhoCorp in
+                    let lrs = checkKosByName l.Info.Name in
+                    let lr = 
+                      lrs 
+                      |> Seq.choose (fun x -> 
+                        match x with 
+                          | Corp(_,_,_,_,_) -> Some x 
+                          | _ -> None
+                      )
+                      |> Seq.tryFind (fun x -> (getName x) = l.Info.Name) 
+                    in
+                    match lr with
+                      | Some(Corp(cn, _, isKos, Ally(an, _, aIsKos, _), _)) ->
+                        for x in flatKR lr.Value do
+                          obs.OnNext(Kos x);
+                        if isKos || aIsKos then
+                          obs.OnNext(Text (sprintf "This player is RBL because his/her last player corp \"%s\" is KOS." cn));
+                          rl.Add Reason.RBL
+                      | _ -> ()
+
+                if rl.Contains(Reason.KOS) || rl.Contains(Reason.RBL) then
+                  obs.OnNext(Jud (Judge.Threat (List.ofSeq rl)))
+                else if isUnknown && (rl.Contains(Reason.KillInProvi) || rl.Contains(Reason.TrigHappy)) then
+                  obs.OnNext(Jud (Judge.Danger (List.ofSeq rl)))
+                else if isUnknown && (rl.Contains(Reason.NPCCorp) || rl.Contains(Reason.TooYoung)) then
+                  obs.OnNext(Jud (Judge.Caution (List.ofSeq rl)))
+                else
+                  obs.OnNext(Jud Judge.Safe)
+        with
+          | :? WebException as e ->
+            let dom = e.Response.ResponseUri.Host in
+            let ec = e.Status.ToString() in
+            obs.OnNext(Text (sprintf "%s seems to be down right now. %s Error Code: %s" dom Environment.NewLine ec));
+            obs.OnNext (Jud Judge.NoInformation)
+          | e -> reraise ()
 
         obs.OnCompleted();
         Action(fun () -> ())

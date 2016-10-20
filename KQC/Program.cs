@@ -38,11 +38,16 @@ namespace KQC
             
             catch(Exception e)
             {
-                MessageBox.Show("Sorry! An error occurred.\nPlease paste the log.txt to somewhere and let me know.\nI'll fix it in the next release as well as possible.");
-                var p = Path.Combine(Application.ExecutablePath, "log.txt");
-                File.WriteAllText(p, e.ToString());
-                Process.Start(p);
+                FailWith(e);
             }
+        }
+
+        public static void FailWith(Exception e)
+        {
+            MessageBox.Show("Sorry! An error occurred.\nPlease paste the log.txt to somewhere and let me know.\nI'll fix it in the next release as well as possible.");
+            var p = Path.Combine(Application.ExecutablePath, "log.txt");
+            File.WriteAllText(p, e.ToString());
+            Process.Start(p);
         }
         
     }

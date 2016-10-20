@@ -34,15 +34,9 @@ namespace KQC
         {
             name = _name;
             InitializeComponent();
-#if DEBUG
-            this.Text = pNameLabel.Text = "Sample Bad Guy";
-            s = EVE.dummyCheckSource();
-#else
             s = EVE.fullCheckSource(name).Publish().RefCount();
             this.Text = name;
             pNameLabel.Text = name;
-#endif
-
             judgeTextBox.Text = "JUDGING";
             judgeTextBox.ForeColor = Color.White;
             judgeTextBox.BackColor = Color.LightBlue;
@@ -61,21 +55,21 @@ namespace KQC
                      listView1.Items.Add(new ListViewItem(new[] { EVE.getName(k), "Not found" }));
                  else
                      listView1.Items.Add(new ListViewItem(new[] { EVE.getName(k) + " (" + EVE.getType(k) + ")", EVE.isKos(k) ? "KOS" : "Not KOS" }));
-             });
+             }, Program.FailWith);
 
             p.OfType<EVE.Message.Text>()
              .Select(x => x.Item)
              .Subscribe(x =>
              {
                  detailTextBox.Text += x + Environment.NewLine;
-             });
+             }, Program.FailWith);
 
             p.OfType<EVE.Message.CharaIcon>()
              .Select(x => x.Item)
              .Subscribe(x =>
              {
                  pictureBox1.LoadAsync(x);
-             });
+             }, Program.FailWith);
 
             p.OfType<EVE.Message.Jud>()
              .Select(x => x.Item)
@@ -111,7 +105,7 @@ namespace KQC
                      judgeTextBox.ForeColor = Color.White;
                      judgeTextBox.BackColor = Color.Blue;
                  }
-             });
+             }, Program.FailWith);
 
             
         }
