@@ -52,6 +52,8 @@ namespace KQC
             this.button1 = new System.Windows.Forms.Button();
             this.label1 = new System.Windows.Forms.Label();
             this.notifyIcon1 = new System.Windows.Forms.NotifyIcon(this.components);
+            this.settingButton = new System.Windows.Forms.Button();
+            this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
             this.SuspendLayout();
             // 
             // button1
@@ -87,12 +89,34 @@ namespace KQC
             this.notifyIcon1.Visible = true;
             this.notifyIcon1.Click += new System.EventHandler(this.Button1Click);
             // 
+            // settingButton
+            // 
+            this.settingButton.BackColor = System.Drawing.Color.Transparent;
+            this.settingButton.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Center;
+            this.settingButton.FlatAppearance.BorderColor = System.Drawing.Color.White;
+            this.settingButton.FlatAppearance.BorderSize = 0;
+            this.settingButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.settingButton.ForeColor = System.Drawing.Color.White;
+            this.settingButton.Image = ((System.Drawing.Image)(resources.GetObject("settingButton.Image")));
+            this.settingButton.Location = new System.Drawing.Point(264, 89);
+            this.settingButton.Name = "settingButton";
+            this.settingButton.Size = new System.Drawing.Size(18, 18);
+            this.settingButton.TabIndex = 2;
+            this.toolTip1.SetToolTip(this.settingButton, "Open Setting");
+            this.settingButton.UseVisualStyleBackColor = false;
+            this.settingButton.Click += new System.EventHandler(this.settingButton_Click);
+            // 
+            // toolTip1
+            // 
+            this.toolTip1.IsBalloon = true;
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.White;
             this.ClientSize = new System.Drawing.Size(284, 113);
+            this.Controls.Add(this.settingButton);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.button1);
             this.ForeColor = System.Drawing.Color.Black;
@@ -103,9 +127,13 @@ namespace KQC
             this.Name = "MainForm";
             this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
             this.Text = "KOS Quick Checker";
+            this.TopMost = true;
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainFormFormClosing);
             this.ResumeLayout(false);
 
 		}
-	}
+
+        private System.Windows.Forms.Button settingButton;
+        private System.Windows.Forms.ToolTip toolTip1;
+    }
 }

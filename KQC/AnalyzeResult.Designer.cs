@@ -52,6 +52,7 @@ namespace KQC
             this.nameColumn = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.kosColumn = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.detailTextBox = new System.Windows.Forms.TextBox();
+            this.tactButton = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.SuspendLayout();
             // 
@@ -94,10 +95,10 @@ namespace KQC
             // listView1
             // 
             this.listView1.AutoArrange = false;
+            this.listView1.BackColor = System.Drawing.Color.White;
             this.listView1.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.nameColumn,
             this.kosColumn});
-            this.listView1.Enabled = false;
             this.listView1.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.Nonclickable;
             this.listView1.Location = new System.Drawing.Point(12, 183);
             this.listView1.Name = "listView1";
@@ -106,7 +107,6 @@ namespace KQC
             this.listView1.TabIndex = 3;
             this.listView1.UseCompatibleStateImageBehavior = false;
             this.listView1.View = System.Windows.Forms.View.Details;
-            this.listView1.ColumnWidthChanging += new System.Windows.Forms.ColumnWidthChangingEventHandler(this.listView1_ColumnWidthChanging);
             // 
             // nameColumn
             // 
@@ -128,12 +128,25 @@ namespace KQC
             this.detailTextBox.Size = new System.Drawing.Size(228, 95);
             this.detailTextBox.TabIndex = 4;
             // 
+            // tactButton
+            // 
+            this.tactButton.Enabled = false;
+            this.tactButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.tactButton.Location = new System.Drawing.Point(12, 317);
+            this.tactButton.Name = "tactButton";
+            this.tactButton.Size = new System.Drawing.Size(228, 23);
+            this.tactButton.TabIndex = 5;
+            this.tactButton.Text = "Start Tactical Analysis";
+            this.tactButton.UseVisualStyleBackColor = true;
+            this.tactButton.Click += new System.EventHandler(this.tactButton_Click);
+            // 
             // AnalyzeResult
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.White;
-            this.ClientSize = new System.Drawing.Size(252, 322);
+            this.ClientSize = new System.Drawing.Size(252, 348);
+            this.Controls.Add(this.tactButton);
             this.Controls.Add(this.detailTextBox);
             this.Controls.Add(this.listView1);
             this.Controls.Add(this.judgeTextBox);
@@ -163,5 +176,6 @@ namespace KQC
         private System.Windows.Forms.ColumnHeader nameColumn;
         private System.Windows.Forms.ColumnHeader kosColumn;
         private System.Windows.Forms.TextBox detailTextBox;
+        private System.Windows.Forms.Button tactButton;
     }
 }

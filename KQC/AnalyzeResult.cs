@@ -19,27 +19,30 @@ using System.Drawing;
 using System.Windows.Forms;
 using System.Reactive.Linq;
 using KQC.Backend;
+using static KQC.Backend.KOS;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Reactive.Concurrency;
-using System.Reactive.Subjects;
 
 namespace KQC
 {
     public partial class AnalyzeResult : Form
     {
         string name;
-        IObservable<EVE.Message> s;
+        IObservable<KOS.Message> s;
+        int id;
 
         public AnalyzeResult(string _name)
         {
-            name = _name;
+            name = _name.Trim();
             InitializeComponent();
-            s = EVE.fullCheckSource(name).Publish().RefCount();
+            s = fullCheckSource(name).Publish().RefCount();
             this.Text = name;
             pNameLabel.Text = name;
             judgeTextBox.Text = "JUDGING";
             judgeTextBox.ForeColor = Color.White;
             judgeTextBox.BackColor = Color.LightBlue;
+            listView1.ColumnWidthChanged += Program.GenerateListLocker(listView1);
         }
 
         private void AnalyzeResult_Shown(object sender, EventArgs e)
@@ -47,31 +50,38 @@ namespace KQC
             var p = s.SubscribeOn(NewThreadScheduler.Default)
                      .ObserveOn(SynchronizationContext.Current);
 
-            p.OfType<EVE.Message.Kos>()
+            p.OfType<KOS.Message.Id>()
+             .Select(x => x.Item)
+             .Subscribe(x =>
+             {
+                 id = x;
+             });
+
+            p.OfType<KOS.Message.Kos>()
              .Select(x => x.Item)
              .Subscribe(k =>
              {
                  if (k.IsNotFound)
-                     listView1.Items.Add(new ListViewItem(new[] { EVE.getName(k), "Not found" }));
+                     listView1.Items.Add(new ListViewItem(new[] { getName(k), "Not found" }));
                  else
-                     listView1.Items.Add(new ListViewItem(new[] { EVE.getName(k) + " (" + EVE.getType(k) + ")", EVE.isKos(k) ? "KOS" : "Not KOS" }));
+                     listView1.Items.Add(new ListViewItem(new[] { getName(k) + " (" + getType(k) + ")", isKos(k) ? "KOS" : "Not KOS" }));
              }, Program.FailWith);
 
-            p.OfType<EVE.Message.Text>()
+            p.OfType<KOS.Message.Text>()
              .Select(x => x.Item)
              .Subscribe(x =>
              {
                  detailTextBox.Text += x + Environment.NewLine;
              }, Program.FailWith);
 
-            p.OfType<EVE.Message.CharaIcon>()
+            p.OfType<KOS.Message.CharaIcon>()
              .Select(x => x.Item)
              .Subscribe(x =>
              {
                  pictureBox1.LoadAsync(x);
              }, Program.FailWith);
 
-            p.OfType<EVE.Message.Jud>()
+            p.OfType<KOS.Message.Jud>()
              .Select(x => x.Item)
              .Subscribe(j =>
              {
@@ -105,15 +115,26 @@ namespace KQC
                      judgeTextBox.ForeColor = Color.White;
                      judgeTextBox.BackColor = Color.Blue;
                  }
-             }, Program.FailWith);
 
-            
+                 if (!j.IsNoInformation)
+                     tactButton.Enabled = true;
+
+                 if (j.IsSafe && Properties.Settings.Default.SafeAutoClose)
+                     new Task(() =>
+                     {
+                         Thread.Sleep(2000);
+                         this.Invoke(new Action(this.Dispose));
+                         this.Invoke(new Action(this.Close));
+                     }).Start();
+                 
+                 else if ((j.IsDanger || j.IsThreat) && Properties.Settings.Default.DangerAutoAnalyse)
+                     tactButton_Click(this, EventArgs.Empty);
+             }, Program.FailWith);   
         }
 
-        private void listView1_ColumnWidthChanging(object sender, ColumnWidthChangingEventArgs e)
+        private void tactButton_Click(object sender, EventArgs e)
         {
-            e.Cancel = true;
-            e.NewWidth = listView1.Columns[e.ColumnIndex].Width;
+            new TacticalAnalyser(id, name).Show();
         }
     }
 }

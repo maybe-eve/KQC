@@ -35,8 +35,7 @@ namespace KQC
         public MainForm()
         {
             InitializeComponent();
-            AddClipboardFormatListener(this.Handle);   
-            
+            AddClipboardFormatListener(this.Handle);
         }
 
         protected override void WndProc(ref Message m)
@@ -69,5 +68,9 @@ namespace KQC
             a.Show();
         }
 
+        private void settingButton_Click(object sender, EventArgs e)
+        {
+            new SettingWindow().ShowDialog();
+        }
     }
 }

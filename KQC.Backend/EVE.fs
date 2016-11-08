@@ -44,101 +44,111 @@ module SeqX =
 
 module EVE =
   begin
-    type KosResult =
-      | Ally of (string * string * bool * int)
-      | Corp of (string * string * bool * KosResult * int)
-      | Player of (string * bool * KosResult * int)
-      | Error
-      | NotFound of string
+    type EveChara = XmlProvider<"https://api.eveonline.com/eve/CharacterID.xml.aspx?names=ISD+Parrot">
 
-    type Reason = KOS | RBL | KillInProvi | TooYoung | TrigHappy | NPCCorp
+    type EveItem = XmlProvider<"https://api.eveonline.com/eve/TypeName.xml.aspx?ids=645">
 
-    type Judge =
-      | Threat of Reason list
-      | Danger of Reason list
-      | Caution of Reason list
-      | NoInformation
-      | Safe
+    type EveItems = XmlProvider<"https://api.eveonline.com/eve/TypeName.xml.aspx?ids=645,646">
 
-    type Message = Kos of KosResult | Jud of Judge | Text of string | CharaIcon of string
+    type EveWho = JsonProvider<"https://evewho.com/api.php?type=character&id=1633218082">
 
-    type EveOfficial = XmlProvider<"<eveapi version=\"2\"><currentTime>2016-10-17 13:50:48</currentTime><result><rowset name=\"characters\" key=\"characterID\" columns=\"name,characterID\"><row name=\"example\" characterID=\"0\"/></rowset></result><cachedUntil>2016-11-17 13:50:48</cachedUntil></eveapi>">
+    type EveWhoCorp = JsonProvider<"https://evewho.com/api.php?type=corporation&id=869043665">
 
-    type EveWho = JsonProvider<"{\"info\":{\"character_id\":\"00000000\",\"corporation_id\":\"00000000\",\"alliance_id\":\"00000000\",\"faction_id\":\"0\",\"name\":\"example\",\"sec_status\":\"10.0\"},\"history\":[{\"corporation_id\":\"1000168\",\"start_date\":\"2016-09-23 08:05:00\",\"end_date\":\"2016-10-09 02:09:00\"},{\"corporation_id\":\"00000000\",\"start_date\":\"2016-10-09 02:10:00\",\"end_date\":null}]}">
+    type EveWhoAlly = JsonProvider<"https://evewho.com/api.php?type=alliance&id=99000102">
 
-    type EveWhoCorp = JsonProvider<"{\"info\":{\"corporation_id\":\"00000000\",\"alliance_id\":\"00000000\",\"name\":\"Sample Corp Please Ignore\",\"ticker\":\"SAMPL\",\"member_count\":\"42\",\"is_npc_corp\":\"0\",\"avg_sec_status\":\"0.0\",\"active\":\"0\",\"ceoID\":\"00000000\",\"taxRate\":\"100\",\"description\":\"foo bar baz\"}}">
+    type zKillboard = JsonProvider<"https://zkillboard.com/api/kills/regionID/10000047/pastSeconds/604800/">
+
+    type EveSystem = JsonProvider<"https://crest-tq.eveonline.com/solarsystems/30002290/">
+
+    type EveConst = JsonProvider<"https://crest-tq.eveonline.com/constellations/20000336/">
+
+    type EveRegion = JsonProvider<"https://crest-tq.eveonline.com/regions/11000016/">
 
     let print a =
       sprintf "%A" a
-    
-    let isKos (kr : KosResult) =
-      match kr with
-        | Error | NotFound _ -> false
-        | Ally(_, _, s, _) -> s
-        | Corp(_, _, s, _, _) -> s
-        | Player(_, s, _, _) -> s
-
-    let getName (kr : KosResult) =
-      match kr with
-        | Error -> "Error"
-        | NotFound s -> s
-        | Ally(s, _, _, _) -> s
-        | Corp(s, _, _, _, _) -> s
-        | Player(s, _, _, _) -> s
-
-    let getType (kr : KosResult) =
-      match kr with
-        | Error -> "Error"
-        | NotFound s -> "N/A"
-        | Ally(_, _, _, _) -> "Ally"
-        | Corp(_, _, _, _, _) -> "Corp"
-        | Player(_, _, _, _) -> "Player"
-
-    let rec flatKR (kr : KosResult) =
-      match kr with
-        | Error | NotFound _
-        | Ally(_, _, _, _) -> [kr]
-        | Corp(_, _, _, a, _) -> [kr; a]
-        | Player(_, _, c, _) -> kr :: (flatKR c)
-
-    let getReasons jud =
-      match jud with
-        | Threat x -> x
-        | Danger x -> x
-        | Caution x -> x
-        | _ -> []
-
-    let rec parseResult (r : JsonValue) =
-      match r.Properties |> Seq.tryFind (fun (x, _) -> x = "type") |> Option.map (fun (_, x) -> x.AsString ()) with
-          | Some "pilot" ->
-            KosResult.Player(r?label.AsString(), r?kos.AsBoolean(), parseResult(r?corp), r?eveid.AsInteger())
-          | Some "corp" ->
-            KosResult.Corp(r?label.AsString(), r?ticker.AsString(), r?kos.AsBoolean(), parseResult(r?alliance), r?eveid.AsInteger())
-          | Some "alliance" ->
-            KosResult.Ally(r?label.AsString(), r?ticker.AsString(), r?kos.AsBoolean(), r?eveid.AsInteger())
-          | Some _
-          | None -> KosResult.Error
 
     let reqString (uri : string) =
-      let wr = WebRequest.Create uri in
+      let wr = (WebRequest.Create uri) :?> HttpWebRequest in
+      wr.UserAgent = "KQC (github.com/maybe-eve/KQC)" |> ignore;
       use rs = wr.GetResponse() in
       use st = rs.GetResponseStream() in
       use sr = new StreamReader(st, Encoding.UTF8) in
       sr.ReadToEnd()
 
-    let checkKosByName (name : string) =
-      let nq = name.Replace(' ', '+') in
-      let u = sprintf "http://kos.cva-eve.org/api/?c=json&type=unit&q=%s" nq in
-      let res = reqString u in
-      let d = JsonValue.Parse res in
-      d?results.AsArray() |> Seq.map parseResult
-
-    let getEveIdByName (name : string) =
+    let getCharaIdByName (name : string) =
       let n = name.Replace(" ", "%20") in
       let u = sprintf "https://api.eveonline.com/eve/CharacterID.xml.aspx?names=%s" n in 
       let res = reqString u in
-      let d = EveOfficial.Parse res in
+      let d = EveChara.Parse res in
       d.Result.Rowset.Row.CharacterId
+
+    let getCharaNameById id =
+      let u = sprintf "https://api.eveonline.com/eve/CharacterName.xml.aspx?ids=%i" id in
+      let res = reqString u in
+      let d = EveChara.Parse res in
+      d.Result.Rowset.Row.Name
+
+    let getTypeNameById id =
+      let u = sprintf "https://api.eveonline.com/eve/TypeName.xml.aspx?ids=%i" id in
+      let res = reqString u in
+      let d = EveItem.Parse res in
+      d.Result.Rowset.Row.TypeName
+
+    let getTypeNamesById (ids : int seq) =
+      let s = String.Join(",", ids) in
+      let u = sprintf "https://api.eveonline.com/eve/TypeName.xml.aspx?ids=%s" s in
+      let res = reqString u in
+      let d = EveItems.Parse res in
+      d.Result.Rowset.Rows |> Seq.map (fun x -> x.TypeName)
+
+    let getTypeNameDictById (ids : int seq) =
+      let ns = getTypeNamesById ids in
+      Seq.zip ids ns |> dict
+
+    type cachedTypeNameGetter () =
+      let dict = new Dictionary<int, string>()
+      member this.get id =
+        if dict.ContainsKey id then
+          dict.[id]
+        else
+          let s = getTypeNameById id in
+          dict.[id] <- s;
+          s
+
+    type cachedSystemInfoGetter () =
+      
+      let sysdict = new Dictionary<int, (string * int)>()
+      let condict = new Dictionary<int, (string * string)>()
+      let regdict = new Dictionary<string, string>()
+
+      member this.get id =
+        let (sn, cid) = 
+          if sysdict.ContainsKey id then
+            sysdict.[id]
+          else
+            let sys = sprintf "https://crest-tq.eveonline.com/solarsystems/%i/" id |> reqString |> EveSystem.Parse in
+            let x = (sys.Name, sys.Constellation.Id) in
+            sysdict.Add(id, x); x
+        in
+        let (cn, ruri) = 
+          if condict.ContainsKey cid then
+            condict.[cid]
+          else
+            let con = sprintf "https://crest-tq.eveonline.com/constellations/%i/" cid |> reqString |> EveConst.Parse in
+            let x = (con.Name, con.Region.Href) in
+            condict.Add(cid, x); x
+        in
+        let rn =
+          if regdict.ContainsKey ruri then
+            regdict.[ruri]
+          else
+            let reg = ruri |> reqString |> EveRegion.Parse in
+            let x = reg.Name in
+            regdict.Add(ruri, x); x
+        in
+        (sn, cn, rn)
+
+    let StaticSystemInfoGetter = cachedSystemInfoGetter ()
 
     let eveWho id =
       let u = sprintf "https://evewho.com/api.php?type=character&id=%i"  id in
@@ -150,191 +160,45 @@ module EVE =
       let res = reqString u in
       EveWhoCorp.Parse res
 
+    let eveWhoAlly id =
+      let u = sprintf "https://evewho.com/api.php?type=alliance&id=%i"  id in
+      let res = reqString u in
+      EveWhoAlly.Parse res
+
     let isNpcCorp id =
-      //id >= 1000002 && id <= 1000182
-      let w = eveWhoCorp id in
-      w.Info.IsNpcCorp <> 0
+      id >= 1000002 && id <= 1000182
 
-    let checkProviKills id =
+    let getRecentProviKills () =
       try
-        let res = reqString "https://zkillboard.com/api/kills/regionID/10000047/pastSeconds/604800/" in
-        id.ToString() |> res.Contains
+        reqString "https://zkillboard.com/api/kills/regionID/10000047/pastSeconds/604800/"
+        |> zKillboard.Parse
+        |> Array.toSeq
       with
-        | _ -> false
+        | _ -> Seq.empty
 
-    let checkRecentKillCount id =
+    let getRecentKillById id = 
       try
-        let u = sprintf "https://zkillboard.com/api/kills/characterID/%i/pastSeconds/604800/" id in
-        let res = reqString u in
-        let q = "killID" in
-        let rec count c (i : int) =
-          let i' = res.IndexOf(q, i) in
-          if i' <> -1 then
-            count (c + 1) i'
-          else
-            c
-        in count 0 0
-        //Regex.Matches(res, "killID").Count
+        sprintf "https://zkillboard.com/api/kills/characterID/%i/pastSeconds/604800/" id
+        |> reqString
+        |> zKillboard.Parse
+        |> Array.toSeq
       with
-        | _ -> 0
+        | _ -> Seq.empty
+
+    let checkProviKillCountById id =
+      getRecentProviKills ()
+      |> Seq.map (fun x -> x.Attackers)
+      |> Seq.concat
+      |> Seq.exists (fun x -> x.CharacterId = id)
+
+    let checkRecentKillCountById id =
+      getRecentKillById id |> Seq.length
 
     let getIconUriById id =
       sprintf "https://image.eveonline.com/Character/%i_64.jpg" id
 
-    let dummyCheckSource () =
-      Observable.Create<Message>((fun (obs : IObserver<Message>) ->
-        for k in flatKR (KosResult.Player("Sample Bad Guy", false, KosResult.Corp("NPC Corp", "NPC-Z", false, KosResult.Ally("None", "", false, 0), 0), 9680952)) do
-          obs.OnNext(Kos k);
-        obs.OnNext(CharaIcon (getIconUriById 96809520));
-        obs.OnNext(Text "This player has killed someone in Providence recently.");
-        obs.OnNext(Text (sprintf "This player has killed %i ship(s) in this week." 42));
-        obs.OnNext(Text "This player is a member of a NPC corp.");
-        for k in flatKR (KosResult.Corp("Pirates Inc.", "NPC-Z", false, KosResult.Ally("Outlaw Alliance", "", true, 0), 0)) do
-          obs.OnNext(Kos k);
-        obs.OnNext(Text (sprintf "This player is RBL because his/her last player corp \"%s\" is KOS." "Pirates Inc."));
-        obs.OnNext(Jud (Judge.Threat []));
-        obs.OnCompleted();
-        Action(fun () -> ())
-      ))
-      
-    let fullCheckSource name =
-      Observable.Create<Message>((fun (obs : IObserver<Message>) ->
-        try
-          let rs = checkKosByName name in
-          let r = 
-            rs  
-            |> Seq.choose (fun x -> 
-              match x with 
-                | Player(_,_,_,_) -> Some x 
-                | _ -> None
-            )
-            |> Seq.tryFind (fun x -> (getName x) = name) in
-          let (id, corpId) = 
-            if r.IsNone then
-              obs.OnNext (Text "No KOS results found.");
-              obs.OnNext (Kos (KosResult.NotFound name));
-              (getEveIdByName name, None)
-            else
-              let ks = flatKR r.Value in
-              let mutable f = false in
-              let mutable p = None in
-              for k in ks do
-                f <- isKos k || f;
-                obs.OnNext(Kos k);
-                match k with
-                  | Player(_, _, _, _) -> p <- Some k
-                  | _ -> ()
-              if f then
-                p |> Option.map (function | Player(_, _, _, id) -> id | _ -> 0)
-                  |> Option.filter ((<>) 0)
-                  |> Option.iter (fun id -> obs.OnNext(CharaIcon (getIconUriById id)));
-                obs.OnNext (Jud(Judge.Threat [Reason.KOS])); (-1, None)
-              else
-                match p with
-                  | Some (Player(_, _, Corp(_, _, _, _, corpId), id)) -> 
-                    (id, Some corpId)
-                  | Some(_)
-                  | None -> obs.OnNext (Jud Judge.Safe); (-1, None)
-          in
-          match id with
-            | 0 ->
-              obs.OnNext (Text "This user doesn't exist.");
-              obs.OnNext (Jud Judge.NoInformation)
-            | -1 -> ()
-            | id ->
-              obs.OnNext(CharaIcon (getIconUriById id));
-              let who = eveWho id in
-
-              if who.JsonValue.Item("info") = JsonValue.Null then
-                obs.OnNext (Text "This user doesn't exist.");
-                obs.OnNext (Jud Judge.NoInformation)
-              else
-                let rl = List<Reason>() in
-
-                let c = checkRecentKillCount id in
-                if c > 0 then
-                  obs.OnNext(Text (sprintf "This player has killed %i ship(s) in this week." c));
-                  rl.Add Reason.TrigHappy;
-                  if (checkProviKills id) then
-                    obs.OnNext(Text "This player has killed someone in Providence recently.");
-                    rl.Add Reason.KillInProvi
-
-                let hist = who.History in
-
-                let d = (DateTime.Now - (Seq.head hist).StartDate).Days in
-                if d < 14 then
-                  obs.OnNext(Text (sprintf "This player is only %i day(s) old." d));
-                  rl.Add Reason.TooYoung
-
-                let isUnknown = 
-                  if corpId.IsNone then
-                    obs.OnNext(Text ("Fetching data from EveWho..." + Environment.NewLine + "(can be outdated!)"));
-                    let l = (hist |> Seq.last).CorporationId |> eveWhoCorp in
-                    let lrs = checkKosByName l.Info.Name in
-                    let lr = 
-                      lrs 
-                      |> Seq.choose (fun x -> 
-                        match x with 
-                          | Corp(_,_,_,_,_) -> Some x 
-                          | _ -> None
-                      )
-                      |> Seq.tryFind (fun x -> (getName x) = l.Info.Name) 
-                    in
-                    match lr with
-                      | Some(Corp(cn, _, isKos, Ally(an, _, aIsKos, _), _)) ->
-                        for x in flatKR lr.Value do
-                          obs.OnNext(Kos x);
-                        if isKos || aIsKos then
-                          obs.OnNext(Text (sprintf "This player is KOS because his/her corp \"%s\" is KOS." cn));
-                          rl.Add Reason.RBL
-                        false
-                      | Some _ | None -> true
-                  else false
-
-                if isNpcCorp (defaultArg corpId who.Info.CorporationId) then
-                  obs.OnNext(Text "This player is a member of a NPC corp.");
-                  rl.Add Reason.NPCCorp
-                  let hr = hist |> Seq.rev |> SeqX.skipWhileSafe (fun x -> isNpcCorp x.CorporationId) in
-                  if Seq.length hr > 0 then
-                    let l = (Seq.head hr).CorporationId |> eveWhoCorp in
-                    let lrs = checkKosByName l.Info.Name in
-                    let lr = 
-                      lrs 
-                      |> Seq.choose (fun x -> 
-                        match x with 
-                          | Corp(_,_,_,_,_) -> Some x 
-                          | _ -> None
-                      )
-                      |> Seq.tryFind (fun x -> (getName x) = l.Info.Name) 
-                    in
-                    match lr with
-                      | Some(Corp(cn, _, isKos, Ally(an, _, aIsKos, _), _)) ->
-                        for x in flatKR lr.Value do
-                          obs.OnNext(Kos x);
-                        if isKos || aIsKos then
-                          obs.OnNext(Text (sprintf "This player is RBL because his/her last player corp \"%s\" is KOS." cn));
-                          rl.Add Reason.RBL
-                      | _ -> ()
-
-                if rl.Contains(Reason.KOS) || rl.Contains(Reason.RBL) then
-                  obs.OnNext(Jud (Judge.Threat (List.ofSeq rl)))
-                else if isUnknown && (rl.Contains(Reason.KillInProvi) || rl.Contains(Reason.TrigHappy)) then
-                  obs.OnNext(Jud (Judge.Danger (List.ofSeq rl)))
-                else if isUnknown && (rl.Contains(Reason.NPCCorp) || rl.Contains(Reason.TooYoung)) then
-                  obs.OnNext(Jud (Judge.Caution (List.ofSeq rl)))
-                else
-                  obs.OnNext(Jud Judge.Safe)
-        with
-          | :? WebException as e ->
-            let dom = e.Response.ResponseUri.Host in
-            let ec = e.Status.ToString() in
-            obs.OnNext(Text (sprintf "%s seems to be down right now. %s Error Code: %s" dom Environment.NewLine ec));
-            obs.OnNext (Jud Judge.NoInformation)
-          | e -> reraise ()
-
-        obs.OnCompleted();
-        Action(fun () -> ())
-      ))
+    let getRenderUriById id =
+      sprintf "https://imageserver.eveonline.com/Render/%i_64.png" id
 
   end
 

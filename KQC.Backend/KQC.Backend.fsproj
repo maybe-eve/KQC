@@ -53,6 +53,8 @@
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="EVE.fs" />
     <Content Include="packages.config" />
+    <Compile Include="KOS.fs" />
+    <Compile Include="Tact.fs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="FSharp.Core">
