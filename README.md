@@ -27,13 +27,9 @@ You can do this just with Ctrl+C and one click.
 ## Screenshots
 
 ![No KOS results? No problem.](http://i.imgur.com/p6y6Amo.png)
-
 ![He seems not red... Oops, he is RBL!](http://i.imgur.com/aMWZizp.png)
-
-![It looks he love Drake](http://i.imgur.com/XqxHqgG.png)
-
+![It looks he love Drake](http://i.imgur.com/XRGAn91.png)
 ![hehe... ALT obvious...](http://i.imgur.com/nD8J3gT.png)
-
 ![Now I can guess what kind of fit his Drake is](http://i.imgur.com/iYhTLrs.png)
 
 ## How to use
