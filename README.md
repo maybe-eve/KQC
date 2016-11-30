@@ -4,7 +4,7 @@
 
 KQC is a frontend software for [CVA KOS - Kill On Sight](http://kos.cva-eve.org/).
 
-Checking [zKillboard](https://zkillboard.com) and [Eve Who](http://evewho.com), KQC can determine whether a player is RBL or not. (automatically!)
+Checking [zKillboard](https://zkillboard.com), KQC can determine whether a player is RBL or not. (automatically!)
 
 Also, KQC fetches the number of kills he/she have made, and whether in Providence or not. (automatically!!)
 

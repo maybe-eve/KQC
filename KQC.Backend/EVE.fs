@@ -30,6 +30,35 @@ open System.Text.RegularExpressions
 open FSharp.Data
 open FSharp.Data.JsonExtensions
 
+type httpResponse =
+  | OK of string
+  | Error of HttpStatusCode * string
+
+module Response =
+  begin
+    let map (r : httpResponse) f =
+      match r with
+        | OK s -> f s |> OK
+        | Error (e, s) -> r
+
+    let toOption (r : httpResponse) =
+      match r with
+        | OK s -> Some s
+        | Error _ -> None
+  end
+
+[<AutoOpen>]
+module OptionX =
+  begin
+    let (|?) o v =
+      defaultArg o v
+
+    let concat o1 o2 =
+      match o1 with
+        | Some x -> Option.map (fun y -> (x, y)) o2
+        | None -> None
+  end
+
 module SeqX = 
   begin
     let skipSafe n s =
@@ -46,15 +75,17 @@ module EVE =
   begin
     type EveChara = XmlProvider<"https://api.eveonline.com/eve/CharacterID.xml.aspx?names=ISD+Parrot">
 
-    type EveItem = XmlProvider<"https://api.eveonline.com/eve/TypeName.xml.aspx?ids=645">
-
     type EveItems = XmlProvider<"https://api.eveonline.com/eve/TypeName.xml.aspx?ids=645,646">
 
-    type EveWho = JsonProvider<"https://evewho.com/api.php?type=character&id=1633218082">
+    type EsiWho = JsonProvider<"https://esi.tech.ccp.is/latest/characters/1633218082/">
 
-    type EveWhoCorp = JsonProvider<"https://evewho.com/api.php?type=corporation&id=869043665">
+    type EsiWhoCorpHistory = JsonProvider<"https://esi.tech.ccp.is/latest/characters/1633218082/corporationhistory/">
 
-    type EveWhoAlly = JsonProvider<"https://evewho.com/api.php?type=alliance&id=99000102">
+    type EsiCorp = JsonProvider<"https://esi.tech.ccp.is/latest/corporations/1000171/">
+
+    type EsiWhoAllyHistory = JsonProvider<"https://esi.tech.ccp.is/latest/corporations/869043665/alliancehistory/">
+
+    type EsiType = JsonProvider<"https://esi.tech.ccp.is/latest/universe/types/645/">
 
     type zKillboard = JsonProvider<"https://zkillboard.com/api/kills/regionID/10000047/pastSeconds/604800/">
 
@@ -75,6 +106,51 @@ module EVE =
       use sr = new StreamReader(st, Encoding.UTF8) in
       sr.ReadToEnd()
 
+    let req (uri : string) =
+      let wr = (WebRequest.Create uri) :?> HttpWebRequest in
+      wr.UserAgent = "KQC (github.com/maybe-eve/KQC)" |> ignore;
+      use rs = wr.GetResponse() :?> HttpWebResponse in
+      use st = rs.GetResponseStream() in
+      use sr = new StreamReader(st, Encoding.UTF8) in
+      if rs.StatusCode = HttpStatusCode.OK then
+        sr.ReadToEnd() |> OK
+      else
+        (rs.StatusCode, sr.ReadToEnd()) |> Error
+
+    let esiWho id =
+      let u = sprintf "https://esi.tech.ccp.is/latest/characters/%i/" id in
+      let u2 = u + "corporationhistory/" in
+      let res = req u |> Response.toOption in
+      let res2 = req u2 |> Response.toOption in
+      OptionX.concat (Option.map EsiWho.Parse res) (Option.map EsiWhoCorpHistory.Parse res2)
+
+    let esiCorp id =
+      let u = sprintf "https://esi.tech.ccp.is/latest/corporations/%i/" id in
+      let u2 = u + "alliancehistory/" in
+      let res = req u |> Response.toOption in
+      let res2 = req u2 |> Response.toOption in
+      OptionX.concat (Option.map EsiCorp.Parse res) (Option.map EsiWhoAllyHistory.Parse res2)
+
+    let isNpcCorp id =
+      id >= 1000002 && id <= 1000182
+
+    let getRecentProviKills () =
+      try
+        reqString "https://zkillboard.com/api/kills/regionID/10000047/pastSeconds/604800/"
+        |> zKillboard.Parse
+        |> Array.toSeq
+      with
+        | _ -> Seq.empty
+
+    let getRecentKillById id = 
+      try
+        sprintf "https://zkillboard.com/api/kills/characterID/%i/pastSeconds/604800/" id
+        |> reqString
+        |> zKillboard.Parse
+        |> Array.toSeq
+      with
+        | _ -> Seq.empty
+
     let getCharaIdByName (name : string) =
       let n = name.Replace(" ", "%20") in
       let u = sprintf "https://api.eveonline.com/eve/CharacterID.xml.aspx?names=%s" n in 
@@ -83,16 +159,14 @@ module EVE =
       d.Result.Rowset.Row.CharacterId
 
     let getCharaNameById id =
-      let u = sprintf "https://api.eveonline.com/eve/CharacterName.xml.aspx?ids=%i" id in
-      let res = reqString u in
-      let d = EveChara.Parse res in
-      d.Result.Rowset.Row.Name
+      let (x, _) = (esiWho id).Value in
+      x.Name
 
     let getTypeNameById id =
-      let u = sprintf "https://api.eveonline.com/eve/TypeName.xml.aspx?ids=%i" id in
+      let u = sprintf "https://esi.tech.ccp.is/latest/universe/types/%i/" id in
       let res = reqString u in
-      let d = EveItem.Parse res in
-      d.Result.Rowset.Row.TypeName
+      let d = EsiType.Parse res in
+      d.TypeName
 
     let getTypeNamesById (ids : int seq) =
       let s = String.Join(",", ids) in
@@ -149,47 +223,6 @@ module EVE =
         (sn, cn, rn)
 
     let StaticSystemInfoGetter = cachedSystemInfoGetter ()
-
-    let eveWho id =
-      let u = sprintf "https://evewho.com/api.php?type=character&id=%i"  id in
-      let res = reqString u in
-      EveWho.Parse res
-
-    let eveWhoCorp id =
-      let u = sprintf "https://evewho.com/api.php?type=corporation&id=%i"  id in
-      let res = reqString u in
-      EveWhoCorp.Parse res
-
-    let eveWhoAlly id =
-      let u = sprintf "https://evewho.com/api.php?type=alliance&id=%i"  id in
-      let res = reqString u in
-      EveWhoAlly.Parse res
-
-    let isNpcCorp id =
-      id >= 1000002 && id <= 1000182
-
-    let getRecentProviKills () =
-      try
-        reqString "https://zkillboard.com/api/kills/regionID/10000047/pastSeconds/604800/"
-        |> zKillboard.Parse
-        |> Array.toSeq
-      with
-        | _ -> Seq.empty
-
-    let getRecentKillById id = 
-      try
-        sprintf "https://zkillboard.com/api/kills/characterID/%i/pastSeconds/604800/" id
-        |> reqString
-        |> zKillboard.Parse
-        |> Array.toSeq
-      with
-        | _ -> Seq.empty
-
-    let checkProviKillCountById id =
-      getRecentProviKills ()
-      |> Seq.map (fun x -> x.Attackers)
-      |> Seq.concat
-      |> Seq.exists (fun x -> x.CharacterId = id)
 
     let checkRecentKillCountById id =
       getRecentKillById id |> Seq.length

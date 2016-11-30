@@ -174,95 +174,96 @@ module KOS =
             | -1 -> ()
             | id ->
               getIconUriById id |> CharaIcon |> obs.OnNext;
-              let who = eveWho id in
+              let esiwho = esiWho id in
 
-              if who.JsonValue.Item("info") = JsonValue.Null then
-                print "This user doesn't exist.";
-                Jud Judge.NoInformation |> obs.OnNext
-              else
-                id |> Id |> obs.OnNext;
-                let rl = List<Reason>() in
+              match esiwho with
+                | None ->
+                  print "This user doesn't exist.";
+                  Jud Judge.NoInformation |> obs.OnNext
+                | Some (who, corphist) ->
+                  id |> Id |> obs.OnNext;
+                  let rl = List<Reason>() in
+                  
+                  let c = checkRecentKillCountById id in
+                  if c > 0 then
+                    sprintf "This player has killed %i ship(s) in this week." c |> print;
+                    rl.Add Reason.TrigHappy;
+                  
+                  let d = (DateTime.Now - (Seq.last corphist).StartDate).Days in
+                  if d < 14 then
+                    sprintf "This player is only %i day(s) old." d |> print
+                    rl.Add Reason.TooYoung
 
-                let c = checkRecentKillCountById id in
-                if c > 0 then
-                  sprintf "This player has killed %i ship(s) in this week." c |> print;
-                  rl.Add Reason.TrigHappy;
-                  if (checkProviKillCountById id) then
-                    print "This player has killed someone in Providence recently.";
-                    rl.Add Reason.KillInProvi
+                  let mutable isUnknown = 
+                    if corpId.IsNone then
+                      let (lr, corpName, allyhist) = 
+                        match who.CorporationId |> esiCorp with
+                          | Some (corp, ah) ->
+                            let lrs = checkByName corp.CorporationName in
+                            let ret = 
+                              lrs 
+                              |> Seq.choose (fun x -> 
+                                match x with 
+                                  | Corp(_,_,_,_,_) -> Some x 
+                                  | _ -> None
+                              )
+                              |> Seq.tryFind (fun x -> (getName x) = corp.CorporationName)
+                            in (ret, corp.CorporationName, ah)
+                          | None -> (None, "", Seq.toArray [])
+                      in
+                      match lr with
+                        | Some(Corp(cn, _, isKos, Ally(an, _, aIsKos, _), _)) ->
+                          flatKR lr.Value |> List.iter (Kos >> obs.OnNext);
+                          if isKos || aIsKos then
+                            sprintf "This player is KOS because his/her corp \"%s\" is KOS." cn |> print;
+                            rl.Add Reason.RBL
+                          false
+                        | Some _ | None -> 
+                          KosResult.NotFound corpName |> Kos |> obs.OnNext;
+                          if allyhist.Length = 0 then 
+                            print "No information available for this player and his/her corp.";
+                            true
+                          else
+                            true
+                    else false
 
-                let hist = who.History in
-
-                let d = (DateTime.Now - (Seq.head hist).StartDate).Days in
-                if d < 14 then
-                  sprintf "This player is only %i day(s) old." d |> print
-                  rl.Add Reason.TooYoung
-
-                let mutable isUnknown = 
-                  if corpId.IsNone then
-                    "Using corp data from EveWho..." + Environment.NewLine + "(can be outdated!)" |> print;
-                    let l = (hist |> Seq.last).CorporationId |> eveWhoCorp in
-                    let lrs = checkByName l.Info.Name in
-                    let lr = 
-                      lrs 
-                      |> Seq.choose (fun x -> 
-                        match x with 
-                          | Corp(_,_,_,_,_) -> Some x 
-                          | _ -> None
-                      )
-                      |> Seq.tryFind (fun x -> (getName x) = l.Info.Name) 
-                    in
-                    match lr with
-                      | Some(Corp(cn, _, isKos, Ally(an, _, aIsKos, _), _)) ->
-                        flatKR lr.Value |> List.iter (Kos >> obs.OnNext);
-                        if isKos || aIsKos then
-                          sprintf "This player is KOS because his/her corp \"%s\" is KOS." cn |> print;
-                          rl.Add Reason.RBL
-                        false
-                      | Some _ | None -> 
-                        KosResult.NotFound l.Info.Name |> Kos |> obs.OnNext;
-                        if l.Info.AllianceId = 0 then 
-                          print "No information available for this player and his/her corp.";
-                          true
-                        else
-                          true
-                  else false
-
-                if isNpcCorp (defaultArg corpId who.Info.CorporationId) then
-                  print "This player is a member of a NPC corp.";
-                  rl.Add Reason.NPCCorp
-                  let hr = hist |> Seq.rev |> SeqX.skipWhileSafe (fun x -> isNpcCorp x.CorporationId) in
-                  if Seq.length hr > 0 then
-                    let l = (Seq.head hr).CorporationId |> eveWhoCorp in
-                    let lrs = checkByName l.Info.Name in
-                    let lr = 
-                      lrs 
-                      |> Seq.choose (fun x -> 
-                        match x with 
-                          | Corp(_,_,_,_,_) -> Some x 
-                          | _ -> None
-                      )
-                      |> Seq.tryFind (fun x -> (getName x) = l.Info.Name) 
-                    in
-                    match lr with
-                      | Some(Corp(cn, _, isKos, Ally(an, _, aIsKos, _), _)) ->
-                        flatKR lr.Value |> List.iter (Kos >> obs.OnNext);
-                        if isKos || aIsKos then
-                          sprintf "This player is RBL because his/her last player corp \"%s\" is KOS." cn |> print;
-                          rl.Add Reason.RBL
-                      | _ -> ()
+                  if isNpcCorp (corpId |? who.CorporationId) then
+                    print "This player is a member of a NPC corp.";
+                    rl.Add Reason.NPCCorp
+                    let hr = corphist |> Seq.rev |> SeqX.skipWhileSafe (fun x -> isNpcCorp x.CorporationId) in
+                    if Seq.length hr > 0 then
+                      let l = (Seq.head hr).CorporationId |> esiCorp |> Option.map (fun (x, _) -> x.CorporationName) |? "" in
+                      let lrs = checkByName l in
+                      let lr = 
+                        lrs 
+                        |> Seq.choose (fun x -> 
+                          match x with 
+                            | Corp(_,_,_,_,_) -> Some x 
+                            | _ -> None
+                        )
+                        |> Seq.tryFind (fun x -> (getName x) = l) 
+                      in
+                      match lr with
+                        | Some(Corp(cn, _, isKos, Ally(an, _, aIsKos, _), _)) ->
+                          flatKR lr.Value |> List.iter (Kos >> obs.OnNext);
+                          if isKos || aIsKos then
+                            sprintf "This player is RBL because his/her last player corp \"%s\" is KOS." cn |> print;
+                            rl.Add Reason.RBL
+                        | _ -> ()
+                    else
+                      print "This player has never been a member of any player corps.";
+                      isUnknown <- true;
+                
+                  if rl.Contains(Reason.KOS) || rl.Contains(Reason.RBL) then
+                    Judge.Threat (List.ofSeq rl) |> Jud |> obs.OnNext;
+                  else if isUnknown && (rl.Contains(Reason.KillInProvi) || rl.Contains(Reason.TrigHappy)) then
+                    Judge.Danger (List.ofSeq rl) |> Jud |> obs.OnNext;
+                  else if isUnknown && (rl.Contains(Reason.NPCCorp) || rl.Contains(Reason.TooYoung)) then
+                    Judge.Caution (List.ofSeq rl) |> Jud |> obs.OnNext;
+                  else if isUnknown then
+                    Judge.NoInformation |> Jud |> obs.OnNext;
                   else
-                    print "This player has never been a member of any player corps.";
-                    isUnknown <- true
-
-                if rl.Contains(Reason.KOS) || rl.Contains(Reason.RBL) then
-                  Judge.Threat (List.ofSeq rl) |> Jud |> obs.OnNext;
-                else if isUnknown && (rl.Contains(Reason.KillInProvi) || rl.Contains(Reason.TrigHappy)) then
-                  Judge.Danger (List.ofSeq rl) |> Jud |> obs.OnNext;
-                else if isUnknown && (rl.Contains(Reason.NPCCorp) || rl.Contains(Reason.TooYoung)) then
-                  Judge.Caution (List.ofSeq rl) |> Jud |> obs.OnNext;
-                else
-                  Judge.Safe |> Jud |> obs.OnNext;
+                    Judge.Safe |> Jud |> obs.OnNext;
         with
           | :? WebException as e ->
             let dom = e.Response.ResponseUri.Host in

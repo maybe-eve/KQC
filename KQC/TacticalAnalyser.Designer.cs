@@ -67,17 +67,18 @@ namespace KQC
             this.columnHeader1 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader2 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.tabPage3 = new System.Windows.Forms.TabPage();
-            this.shipPictureBox = new System.Windows.Forms.PictureBox();
-            this.shipsComboBox = new System.Windows.Forms.ComboBox();
+            this.label10 = new System.Windows.Forms.Label();
+            this.radioButton2 = new System.Windows.Forms.RadioButton();
+            this.radioButton1 = new System.Windows.Forms.RadioButton();
+            this.label8 = new System.Windows.Forms.Label();
             this.label7 = new System.Windows.Forms.Label();
             this.listView2 = new System.Windows.Forms.ListView();
             this.columnHeader3 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader4 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-            this.label8 = new System.Windows.Forms.Label();
-            this.radioButton1 = new System.Windows.Forms.RadioButton();
-            this.radioButton2 = new System.Windows.Forms.RadioButton();
+            this.shipsComboBox = new System.Windows.Forms.ComboBox();
+            this.shipPictureBox = new System.Windows.Forms.PictureBox();
             this.label9 = new System.Windows.Forms.Label();
-            this.label10 = new System.Windows.Forms.Label();
+            this.kosButton = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.shipChart)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.tabControl1.SuspendLayout();
@@ -166,6 +167,7 @@ namespace KQC
             // 
             // tabPage2
             // 
+            this.tabPage2.Controls.Add(this.kosButton);
             this.tabPage2.Controls.Add(this.label6);
             this.tabPage2.Controls.Add(this.label5);
             this.tabPage2.Controls.Add(this.tzChart);
@@ -282,27 +284,52 @@ namespace KQC
             this.tabPage3.TabIndex = 2;
             this.tabPage3.Text = "Recent Fits";
             // 
-            // shipPictureBox
+            // label10
             // 
-            this.shipPictureBox.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.shipPictureBox.Location = new System.Drawing.Point(6, 32);
-            this.shipPictureBox.Name = "shipPictureBox";
-            this.shipPictureBox.Size = new System.Drawing.Size(64, 64);
-            this.shipPictureBox.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
-            this.shipPictureBox.TabIndex = 0;
-            this.shipPictureBox.TabStop = false;
+            this.label10.AutoSize = true;
+            this.label10.Font = new System.Drawing.Font("MS UI Gothic", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(128)));
+            this.label10.Location = new System.Drawing.Point(5, 104);
+            this.label10.Name = "label10";
+            this.label10.Size = new System.Drawing.Size(54, 24);
+            this.label10.TabIndex = 11;
+            this.label10.Text = "0% kills\r\n0% losses";
             // 
-            // shipsComboBox
+            // radioButton2
             // 
-            this.shipsComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.shipsComboBox.Enabled = false;
-            this.shipsComboBox.FormattingEnabled = true;
-            this.shipsComboBox.ImeMode = System.Windows.Forms.ImeMode.Disable;
-            this.shipsComboBox.Location = new System.Drawing.Point(6, 6);
-            this.shipsComboBox.Name = "shipsComboBox";
-            this.shipsComboBox.Size = new System.Drawing.Size(136, 20);
-            this.shipsComboBox.TabIndex = 1;
-            this.shipsComboBox.SelectedIndexChanged += new System.EventHandler(this.shipsComboBox_SelectedIndexChanged);
+            this.radioButton2.AutoSize = true;
+            this.radioButton2.BackColor = System.Drawing.Color.Transparent;
+            this.radioButton2.Enabled = false;
+            this.radioButton2.Location = new System.Drawing.Point(11, 156);
+            this.radioButton2.Name = "radioButton2";
+            this.radioButton2.Size = new System.Drawing.Size(59, 16);
+            this.radioButton2.TabIndex = 9;
+            this.radioButton2.Text = "Losses";
+            this.radioButton2.UseVisualStyleBackColor = false;
+            this.radioButton2.CheckedChanged += new System.EventHandler(this.radioButton2_CheckedChanged);
+            // 
+            // radioButton1
+            // 
+            this.radioButton1.AutoSize = true;
+            this.radioButton1.Checked = true;
+            this.radioButton1.Enabled = false;
+            this.radioButton1.Location = new System.Drawing.Point(11, 138);
+            this.radioButton1.Name = "radioButton1";
+            this.radioButton1.Size = new System.Drawing.Size(45, 16);
+            this.radioButton1.TabIndex = 8;
+            this.radioButton1.TabStop = true;
+            this.radioButton1.Text = "Kills";
+            this.radioButton1.UseVisualStyleBackColor = true;
+            this.radioButton1.CheckedChanged += new System.EventHandler(this.radioButton1_CheckedChanged);
+            // 
+            // label8
+            // 
+            this.label8.AutoSize = true;
+            this.label8.Font = new System.Drawing.Font("MS UI Gothic", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(128)));
+            this.label8.Location = new System.Drawing.Point(151, 6);
+            this.label8.Name = "label8";
+            this.label8.Size = new System.Drawing.Size(5, 11);
+            this.label8.TabIndex = 7;
+            this.label8.Text = "\r\n";
             // 
             // label7
             // 
@@ -339,42 +366,27 @@ namespace KQC
             this.columnHeader4.Text = "Avg. x";
             this.columnHeader4.Width = 26;
             // 
-            // label8
+            // shipsComboBox
             // 
-            this.label8.AutoSize = true;
-            this.label8.Font = new System.Drawing.Font("MS UI Gothic", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(128)));
-            this.label8.Location = new System.Drawing.Point(151, 6);
-            this.label8.Name = "label8";
-            this.label8.Size = new System.Drawing.Size(5, 11);
-            this.label8.TabIndex = 7;
-            this.label8.Text = "\r\n";
+            this.shipsComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.shipsComboBox.Enabled = false;
+            this.shipsComboBox.FormattingEnabled = true;
+            this.shipsComboBox.ImeMode = System.Windows.Forms.ImeMode.Disable;
+            this.shipsComboBox.Location = new System.Drawing.Point(6, 6);
+            this.shipsComboBox.Name = "shipsComboBox";
+            this.shipsComboBox.Size = new System.Drawing.Size(136, 20);
+            this.shipsComboBox.TabIndex = 1;
+            this.shipsComboBox.SelectedIndexChanged += new System.EventHandler(this.shipsComboBox_SelectedIndexChanged);
             // 
-            // radioButton1
+            // shipPictureBox
             // 
-            this.radioButton1.AutoSize = true;
-            this.radioButton1.Checked = true;
-            this.radioButton1.Enabled = false;
-            this.radioButton1.Location = new System.Drawing.Point(11, 138);
-            this.radioButton1.Name = "radioButton1";
-            this.radioButton1.Size = new System.Drawing.Size(45, 16);
-            this.radioButton1.TabIndex = 8;
-            this.radioButton1.TabStop = true;
-            this.radioButton1.Text = "Kills";
-            this.radioButton1.UseVisualStyleBackColor = true;
-            this.radioButton1.CheckedChanged += new System.EventHandler(this.radioButton1_CheckedChanged);
-            // 
-            // radioButton2
-            // 
-            this.radioButton2.AutoSize = true;
-            this.radioButton2.BackColor = System.Drawing.Color.Transparent;
-            this.radioButton2.Enabled = false;
-            this.radioButton2.Location = new System.Drawing.Point(11, 156);
-            this.radioButton2.Name = "radioButton2";
-            this.radioButton2.Size = new System.Drawing.Size(59, 16);
-            this.radioButton2.TabIndex = 9;
-            this.radioButton2.Text = "Losses";
-            this.radioButton2.UseVisualStyleBackColor = false;
-            this.radioButton2.CheckedChanged += new System.EventHandler(this.radioButton2_CheckedChanged);
+            this.shipPictureBox.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.shipPictureBox.Location = new System.Drawing.Point(6, 32);
+            this.shipPictureBox.Name = "shipPictureBox";
+            this.shipPictureBox.Size = new System.Drawing.Size(64, 64);
+            this.shipPictureBox.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
+            this.shipPictureBox.TabIndex = 0;
+            this.shipPictureBox.TabStop = false;
             // 
             // label9
             // 
@@ -388,15 +400,16 @@ namespace KQC
     "7 days.\r\n\r\n\"Losses\" shows\r\nitems desrtoyed,\r\nfrom this pilot\'s\r\nlossmails of\r\nla" +
     "st 7 days.";
             // 
-            // label10
+            // kosButton
             // 
-            this.label10.AutoSize = true;
-            this.label10.Font = new System.Drawing.Font("MS UI Gothic", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(128)));
-            this.label10.Location = new System.Drawing.Point(5, 104);
-            this.label10.Name = "label10";
-            this.label10.Size = new System.Drawing.Size(54, 24);
-            this.label10.TabIndex = 11;
-            this.label10.Text = "0% kills\r\n0% losses";
+            this.kosButton.Enabled = false;
+            this.kosButton.Location = new System.Drawing.Point(216, 6);
+            this.kosButton.Name = "kosButton";
+            this.kosButton.Size = new System.Drawing.Size(75, 20);
+            this.kosButton.TabIndex = 6;
+            this.kosButton.Text = "KOS Check";
+            this.kosButton.UseVisualStyleBackColor = true;
+            this.kosButton.Click += new System.EventHandler(this.kosButton_Click);
             // 
             // TacticalAnalyser
             // 
@@ -456,5 +469,6 @@ namespace KQC
         private System.Windows.Forms.RadioButton radioButton2;
         private System.Windows.Forms.RadioButton radioButton1;
         private System.Windows.Forms.Label label10;
+        private System.Windows.Forms.Button kosButton;
     }
 }

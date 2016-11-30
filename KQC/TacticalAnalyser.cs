@@ -25,6 +25,7 @@ using System.Collections.Generic;
 using KQC.Backend;
 using static KQC.Backend.Tactical;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace KQC
 {
@@ -130,6 +131,7 @@ namespace KQC
              {
                  foreach (var x in xs.Item)
                      listView1.Items.Add(new ListViewItem(new[] { x.Item1, x.Item2.ToString() }));
+                 kosButton.Enabled = true;
              });
 
             p.OfType<Tactical.Message.TzInfo>()
@@ -212,6 +214,32 @@ destroyed in last 7 days.";
             if (radioButton2.Checked == radioButton1.Checked)
                 radioButton1.Checked = !radioButton2.Checked;
             updateItemList();
+        }
+
+        private void kosButton_Click(object sender, EventArgs e)
+        {
+            kosButton.Text = "Checking...";
+            kosButton.Enabled = false;
+            var xs = listView1.Items.Cast<ListViewItem>().ToArray();
+            new Task(() =>
+            {
+                foreach (var i in xs)
+                {
+                    var name = i.SubItems[0].Text;
+                    if (KOS.checkByName(name).Any(KOS.isKos))
+                    {
+                        this.Invoke(new Action(() => i.BackColor = Color.Red));
+                        break;
+                    }
+
+                    else
+                        this.Invoke(new Action(() => i.BackColor = Color.Green));
+                }
+                this.Invoke(new Action(() =>
+                {
+                    kosButton.Text = "Completed";
+                }));
+            }).Start();
         }
     }
 }
