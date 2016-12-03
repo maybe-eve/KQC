@@ -124,7 +124,7 @@ namespace KQC
                  {
                      label7.Text = "NO DATA";
                  }
-             });
+             }, Program.FailWith);
 
             p.OfType<Tactical.Message.Gang>()
              .Subscribe(xs =>
@@ -151,8 +151,6 @@ namespace KQC
                      ca.AxisX.Interval = 3;
                      ca.AxisX.IntervalOffset = 1;
                      ca.AxisX.Maximum = 25;
-                     if (ca.AxisY.Interval < 1)
-                         ca.AxisY.Interval = 1;
                      foreach (var x in xs.Item)
                      {
                          var t = s.Points.Add(x.Item2);
@@ -216,6 +214,11 @@ destroyed in last 7 days.";
             updateItemList();
         }
 
+        async Task<KOS.KosStatus> quickCheck(string name)
+        {
+            return await Task.Run(() => KOS.quickCheck(name));
+        }
+
         private void kosButton_Click(object sender, EventArgs e)
         {
             kosButton.Text = "Checking...";
@@ -223,18 +226,32 @@ destroyed in last 7 days.";
             var xs = listView1.Items.Cast<ListViewItem>().ToArray();
             new Task(() =>
             {
-                foreach (var i in xs)
+                Parallel.ForEach(xs, (i, ls) =>
                 {
                     var name = i.SubItems[0].Text;
-                    if (KOS.checkByName(name).Any(KOS.isKos))
+                    var kt = quickCheck(name);
+                    while(!kt.IsCompleted)
+                    {
+                        if (ls.ShouldExitCurrentIteration)
+                            ls.Break();
+                        Thread.Sleep(500);
+                    }
+                    var k = kt.Result;
+                    if (k == KOS.KosStatus.KOS)
                     {
                         this.Invoke(new Action(() => i.BackColor = Color.Red));
-                        break;
+                        ls.Break();
                     }
-
-                    else
+                    else if (k == KOS.KosStatus.RBL)
+                    {
+                        this.Invoke(new Action(() => i.BackColor = Color.Orange));
+                        ls.Break();
+                    }
+                    else if (k == KOS.KosStatus.NotKOS)
                         this.Invoke(new Action(() => i.BackColor = Color.Green));
-                }
+                    else
+                        this.Invoke(new Action(() => i.BackColor = Color.Yellow));
+                });
                 this.Invoke(new Action(() =>
                 {
                     kosButton.Text = "Completed";

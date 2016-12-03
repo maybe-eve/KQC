@@ -38,6 +38,7 @@ namespace KQC
             InitializeComponent();
             s = fullCheckSource(name).Publish().RefCount();
             this.Text = name;
+            this.Size = new Size(267, 399);
             pNameLabel.Text = name;
             judgeTextBox.Text = "JUDGING";
             judgeTextBox.ForeColor = Color.White;
@@ -62,7 +63,7 @@ namespace KQC
              .Subscribe(k =>
              {
                  if (k.IsNotFound)
-                     listView1.Items.Add(new ListViewItem(new[] { getName(k), "Not found" }));
+                     listView1.Items.Add(new ListViewItem(new[] { getName(k), "Not Found" }));
                  else
                      listView1.Items.Add(new ListViewItem(new[] { getName(k) + " (" + getType(k) + ")", isKos(k) ? "KOS" : "Not KOS" }));
              }, Program.FailWith);
@@ -112,19 +113,25 @@ namespace KQC
                  else if (j.IsNoInformation)
                  {
                      judgeTextBox.Text = "NO INFO";
+                     judgeTextBox.ForeColor = Color.Black;
+                     judgeTextBox.BackColor = Color.Yellow;
+                 }
+                 else if (j.IsNotExist)
+                 {
+                     judgeTextBox.Text = "ERROR";
                      judgeTextBox.ForeColor = Color.White;
                      judgeTextBox.BackColor = Color.Blue;
                  }
 
-                 if (!j.IsNoInformation)
+                 if (!j.IsNotExist)
                      tactButton.Enabled = true;
 
                  if (j.IsSafe && Properties.Settings.Default.SafeAutoClose)
                      new Task(() =>
                      {
                          Thread.Sleep(2000);
-                         this.Invoke(new Action(this.Dispose));
                          this.Invoke(new Action(this.Close));
+                         this.Invoke(new Action(this.Dispose));
                      }).Start();
                  
                  else if ((j.IsDanger || j.IsThreat) && Properties.Settings.Default.DangerAutoAnalyse)
@@ -134,7 +141,31 @@ namespace KQC
 
         private void tactButton_Click(object sender, EventArgs e)
         {
-            new TacticalAnalyser(id, name).Show();
+            panel1.Enabled = true;
+            tactButton.Enabled = false;
+            this.Size = new Size(580, 399);
+
+            if (panel1.Visible == false)
+                panel1.Visible = true;
+
+            var t = new TacticalAnalyser(id, name);
+            t.TopLevel = false;
+            t.Show();
+            panel1.Controls.Add(t.tabControl1);
+
+        }
+
+        private void AnalyzeResult_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            panel1.Controls.Clear();
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            panel1.Visible = false;
+            tactButton.Enabled = true;
+            tactButton.Text = "Show Tactical Analysis";
+            this.Size = new Size(267, 399);
         }
     }
 }

@@ -31,25 +31,33 @@ namespace KQC
         [STAThread]
         public static void Main(string[] args)
         {
+#if !DEBUG
             try
             {
+#endif
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
                 Application.Run(new MainForm());
-            }
+#if !DEBUG
+        }
             
             catch(Exception e)
             {
                 FailWith(e);
             }
+#endif
         }
 
         public static void FailWith(Exception e)
         {
+#if !DEBUG
             MessageBox.Show("Sorry! An error occurred.\nPlease paste the log.txt to somewhere and let me know.\nI'll fix it in the next release as well as possible.");
             var p = Path.Combine(Application.StartupPath, "log.txt");
             File.WriteAllText(p, e.ToString());
             Process.Start(p);
+#else
+            throw e;
+#endif
         }
         
         public static ColumnWidthChangedEventHandler GenerateListLocker(ListView l)

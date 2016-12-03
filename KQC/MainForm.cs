@@ -31,11 +31,14 @@ namespace KQC
         static extern bool RemoveClipboardFormatListener(IntPtr hwnd);
         
         private const int WM_CLIPBOARDUPDATE = 0x031D;
-        
+
+        string text = "";
+
         public MainForm()
         {
             InitializeComponent();
             AddClipboardFormatListener(this.Handle);
+            text = button1.Text;
         }
 
         protected override void WndProc(ref Message m)
@@ -44,8 +47,12 @@ namespace KQC
             if (m.Msg == WM_CLIPBOARDUPDATE) {
                 var i = Clipboard.GetDataObject();
                 if (i.GetDataPresent(DataFormats.Text)) {
-                    var text = (string)i.GetData(DataFormats.Text);
-                    button1.Text = text;
+                    var _text = (string)i.GetData(DataFormats.Text);
+                    text = _text;
+                    if (text.Contains(Environment.NewLine))
+                        button1.Text = "(Multiple Pilots)";
+                    else
+                        button1.Text = text;
                 } 
             }
         }
@@ -62,7 +69,9 @@ namespace KQC
         
         void Button1Click(object sender, EventArgs e)
         {
-            var a = new AnalyzeResult(button1.Text);
+            var a = text.Contains(Environment.NewLine) 
+                ? (Form)new MultiResults(text.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)) 
+                : (Form)new AnalyzeResult(text);
             a.StartPosition = FormStartPosition.Manual;
             a.Location = this.Location;
             a.Show();

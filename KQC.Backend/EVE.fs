@@ -176,9 +176,10 @@ module EVE =
       d.Result.Rowset.Rows |> Seq.map (fun x -> x.TypeName)
 
     let getTypeNameDictById (ids : int seq) =
-      let ns = getTypeNamesById ids in
+      let sids = Seq.splitInto 10 ids in
+      let ns = sids |> Seq.map getTypeNamesById |> Seq.concat in
       Seq.zip ids ns |> dict
-
+    
     type cachedTypeNameGetter () =
       let dict = new Dictionary<int, string>()
       member this.get id =

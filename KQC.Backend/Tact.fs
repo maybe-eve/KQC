@@ -79,6 +79,21 @@ module Tactical =
               let fit = x.Items |> Seq.map (fun y -> y.TypeId) in
               (ship, fit)
               )
+
+          let tz = 
+            dat
+            |> Seq.map (fun x -> x.KillTime.Hour)
+            |> Seq.groupBy id
+            |> Seq.map (fun (t, xs) -> (t, Seq.length xs))
+          in 
+          let tzr = 
+            [0..23]
+            |> Seq.map (fun x -> (x, tz |> Seq.tryFind (fun (t, c) -> t = x)))
+            |> Seq.map (function | (x, Some(y)) -> (x, snd y) | (x, None) -> (x, 0))
+            |> Seq.sortBy fst
+          in
+          tzr |> TzInfo |> obs.OnNext;
+
           let shipInfo = 
             let s1 = kills |> Seq.map fst in
             let s2 = losses |> Seq.map fst in
@@ -124,25 +139,13 @@ module Tactical =
               ((dic.[sid], sid), k, l, fts', dts')
             )
             |> Seq.sortByDescending (fun (_, k, _, _, _) -> k) 
-            |> Seq.toArray |> Array.toSeq 
+            |> Seq.toArray 
           in
-          ShipInfo shipInfo |> obs.OnNext;
-          let tz = 
-            dat
-            |> Seq.map (fun x -> x.KillTime.Hour)
-            |> Seq.groupBy id
-            |> Seq.map (fun (t, xs) -> (t, Seq.length xs))
-          in 
-          let tzr = 
-            [0..23]
-            |> Seq.map (fun x -> (x, tz |> Seq.tryFind (fun (t, c) -> t = x)))
-            |> Seq.map (function | (x, Some(y)) -> (x, snd y) | (x, None) -> (x, 0))
-            |> Seq.sortBy fst
-          in
-          tzr |> TzInfo |> obs.OnNext;
-          
+           ShipInfo shipInfo |> obs.OnNext;
         with
-          | _ -> ()
+          | e -> 
+            printfn "%A" e; 
+            obs.OnError e
         obs.OnCompleted();
         Action(fun () -> ())
       ))

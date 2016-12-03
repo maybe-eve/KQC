@@ -58,6 +58,7 @@ namespace KQC
             this.tabControl1 = new System.Windows.Forms.TabControl();
             this.tabPage1 = new System.Windows.Forms.TabPage();
             this.tabPage2 = new System.Windows.Forms.TabPage();
+            this.kosButton = new System.Windows.Forms.Button();
             this.label6 = new System.Windows.Forms.Label();
             this.label5 = new System.Windows.Forms.Label();
             this.tzChart = new System.Windows.Forms.DataVisualization.Charting.Chart();
@@ -78,7 +79,6 @@ namespace KQC
             this.shipsComboBox = new System.Windows.Forms.ComboBox();
             this.shipPictureBox = new System.Windows.Forms.PictureBox();
             this.label9 = new System.Windows.Forms.Label();
-            this.kosButton = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.shipChart)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.tabControl1.SuspendLayout();
@@ -182,6 +182,17 @@ namespace KQC
             this.tabPage2.Text = "Gangs & Timezone";
             this.tabPage2.UseVisualStyleBackColor = true;
             // 
+            // kosButton
+            // 
+            this.kosButton.Enabled = false;
+            this.kosButton.Location = new System.Drawing.Point(216, 6);
+            this.kosButton.Name = "kosButton";
+            this.kosButton.Size = new System.Drawing.Size(75, 20);
+            this.kosButton.TabIndex = 6;
+            this.kosButton.Text = "KOS Check";
+            this.kosButton.UseVisualStyleBackColor = true;
+            this.kosButton.Click += new System.EventHandler(this.kosButton_Click);
+            // 
             // label6
             // 
             this.label6.AutoSize = true;
@@ -206,6 +217,9 @@ namespace KQC
             // tzChart
             // 
             this.tzChart.BorderlineColor = System.Drawing.Color.Transparent;
+            chartArea2.AxisY.IntervalAutoMode = System.Windows.Forms.DataVisualization.Charting.IntervalAutoMode.VariableCount;
+            chartArea2.AxisY.IntervalOffsetType = System.Windows.Forms.DataVisualization.Charting.DateTimeIntervalType.Number;
+            chartArea2.AxisY.IntervalType = System.Windows.Forms.DataVisualization.Charting.DateTimeIntervalType.Number;
             chartArea2.Name = "ChartArea1";
             this.tzChart.ChartAreas.Add(chartArea2);
             legend2.Enabled = false;
@@ -359,12 +373,12 @@ namespace KQC
             // columnHeader3
             // 
             this.columnHeader3.Text = "Item Name";
-            this.columnHeader3.Width = 165;
+            this.columnHeader3.Width = 159;
             // 
             // columnHeader4
             // 
             this.columnHeader4.Text = "Avg. x";
-            this.columnHeader4.Width = 26;
+            this.columnHeader4.Width = 31;
             // 
             // shipsComboBox
             // 
@@ -399,17 +413,6 @@ namespace KQC
             this.label9.Text = "\"Kills\" shows \r\nweapons used\r\nto kill, from \r\nthis pilot\'s\r\nkillmails of  last \r\n" +
     "7 days.\r\n\r\n\"Losses\" shows\r\nitems desrtoyed,\r\nfrom this pilot\'s\r\nlossmails of\r\nla" +
     "st 7 days.";
-            // 
-            // kosButton
-            // 
-            this.kosButton.Enabled = false;
-            this.kosButton.Location = new System.Drawing.Point(216, 6);
-            this.kosButton.Name = "kosButton";
-            this.kosButton.Size = new System.Drawing.Size(75, 20);
-            this.kosButton.TabIndex = 6;
-            this.kosButton.Text = "KOS Check";
-            this.kosButton.UseVisualStyleBackColor = true;
-            this.kosButton.Click += new System.EventHandler(this.kosButton_Click);
             // 
             // TacticalAnalyser
             // 
@@ -446,7 +449,6 @@ namespace KQC
         private System.Windows.Forms.PictureBox pictureBox1;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Label label2;
-        private System.Windows.Forms.TabControl tabControl1;
         private System.Windows.Forms.TabPage tabPage1;
         private System.Windows.Forms.TabPage tabPage2;
         private System.Windows.Forms.ListView listView1;
@@ -470,5 +472,6 @@ namespace KQC
         private System.Windows.Forms.RadioButton radioButton1;
         private System.Windows.Forms.Label label10;
         private System.Windows.Forms.Button kosButton;
+        internal System.Windows.Forms.TabControl tabControl1;
     }
 }
