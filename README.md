@@ -1,6 +1,6 @@
 # KQC - KOS Quick Checker
 
-**\>\> [DOWNLOAD NOW (ZIP)](https://github.com/maybe-eve/KQC/releases/download/0.3.1/KQC_031.zip) \<\<**
+**\>\> [DOWNLOAD NOW (ZIP)](https://github.com/maybe-eve/KQC/releases/download/0.4.0/KQC_040.zip) \<\<**
 
 ## What's this?
 
