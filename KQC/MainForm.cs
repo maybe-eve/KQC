@@ -37,8 +37,27 @@ namespace KQC
         public MainForm()
         {
             InitializeComponent();
-            AddClipboardFormatListener(this.Handle);
-            text = button1.Text;
+            if (!Program.IsMono)
+            {
+                var i = Clipboard.GetDataObject();
+                if (i.GetDataPresent(DataFormats.Text))
+                {
+                    var _text = (string)i.GetData(DataFormats.Text);
+                    ReceiveClipboard(_text);
+                }
+                AddClipboardFormatListener(this.Handle);
+            }
+            else
+            {
+                this.Activated += (object sender, EventArgs e) => 
+                    {
+                        var i = Clipboard.GetDataObject();
+                        if (i.GetDataPresent(DataFormats.Text)) {
+                            var _text = (string)i.GetData(DataFormats.Text);
+                            ReceiveClipboard(_text);
+                        }  
+                    };
+            }
         }
 
         protected override void WndProc(ref Message m)
@@ -48,18 +67,26 @@ namespace KQC
                 var i = Clipboard.GetDataObject();
                 if (i.GetDataPresent(DataFormats.Text)) {
                     var _text = (string)i.GetData(DataFormats.Text);
-                    text = _text;
-                    if (text.Contains(Environment.NewLine))
-                        button1.Text = "(Multiple Pilots)";
-                    else
-                        button1.Text = text;
+                    ReceiveClipboard(_text);
                 } 
             }
+        }
+
+        void ReceiveClipboard(string _text)
+        {
+            text = _text;
+            if (text.Contains("\n"))
+                button1.Text = "(Multiple Pilots)";
+            else
+                button1.Text = text; 
         }
         
         void MainFormFormClosing(object sender, FormClosingEventArgs e)
         {
-            RemoveClipboardFormatListener(this.Handle);
+            if (!Program.IsMono)
+            {
+                RemoveClipboardFormatListener(this.Handle);
+            }
         }
         
         string toKos(bool b)
@@ -69,8 +96,8 @@ namespace KQC
         
         void Button1Click(object sender, EventArgs e)
         {
-            var a = text.Contains(Environment.NewLine) 
-                ? (Form)new MultiResults(text.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)) 
+            var a = text.Contains("\n") 
+                ? (Form)new MultiResults(text.Split(new[] { "\n" }, StringSplitOptions.RemoveEmptyEntries)) 
                 : (Form)new AnalyzeResult(text);
             a.StartPosition = FormStartPosition.Manual;
             a.Location = this.Location;

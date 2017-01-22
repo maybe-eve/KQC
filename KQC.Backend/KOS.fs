@@ -126,12 +126,19 @@ module KOS =
       let r =
         let nq = name.Replace(' ', '+') in
         let u = sprintf "http://kos.cva-eve.org/api/?c=json&type=%s&q=%s" (kosType.ToLower()) nq in
-        let res = reqString u in
-        let d = JsonValue.Parse res in
-        if (d.Properties |> Seq.exists (fun (x, _) -> x = "results")) then
-          d?results.AsArray() |> Seq.map parseResult
-        else
-          seq []
+        let rec f () =
+          let res = req u in
+          match res with
+            | OK s -> 
+              let d = JsonValue.Parse s in
+                if (d.Properties |> Seq.exists (fun (x, _) -> x = "results")) then
+                  d?results.AsArray() |> Seq.map parseResult
+                else
+                  seq []
+            | httpResponse.Error (e, s) ->
+              System.Threading.Thread.Sleep(50);
+              f()
+         in f()
       in
       r |> Seq.filter (fun x -> getName x = name) |> Seq.tryFind (fun x -> getType x = kosType)
 
@@ -160,7 +167,7 @@ module KOS =
           match (name |> getCharaIdByName |> esiWho) with
             | Some (pinfo, phist) ->
               if (isNpcCorp pinfo.CorporationId) && (pinfo.CorporationId <> 1000182) then
-                let hr = phist |> Seq.rev |> SeqX.skipWhileSafe (fun x -> isNpcCorp x.CorporationId) in
+                let hr = phist |> SeqX.skipWhileSafe (fun x -> isNpcCorp x.CorporationId) in
                   if (Seq.length hr) > 0 then
                     let clname = (Seq.head hr).CorporationId |> esiCorp |> Option.map (fun (x, _) -> x.CorporationName) |? "" in
                     match (checkExact clname "Corp") with
@@ -258,7 +265,7 @@ module KOS =
                       print "This pilot is a member of a NPC corp.";
                       rl.Add Reason.NPCCorp;
                       KosResult.Corp("NPC Corp", "", false, KosResult.Error, 0) |> Kos |> obs.OnNext;
-                      let hr = corphist |> Seq.rev |> SeqX.skipWhileSafe (fun x -> isNpcCorp x.CorporationId) in
+                      let hr = corphist |> SeqX.skipWhileSafe (fun x -> isNpcCorp x.CorporationId) in
                       if Seq.length hr > 0 then
                         let l = (Seq.head hr).CorporationId |> esiCorp |> Option.map (fun (x, _) -> x.CorporationName) |? "" in
                         let lr = checkExact l "Corp" in

@@ -70,5 +70,13 @@ namespace KQC
                         l.Columns[i].Width = ows[i];
             });
         }
+
+        public static bool IsMono
+        {
+            get
+            {
+                return Type.GetType ("Mono.Runtime") != null;
+            }
+        }
     }
 }

@@ -107,15 +107,20 @@ module EVE =
       sr.ReadToEnd()
 
     let req (uri : string) =
-      let wr = (WebRequest.Create uri) :?> HttpWebRequest in
-      wr.UserAgent = "KQC (github.com/maybe-eve/KQC)" |> ignore;
-      use rs = wr.GetResponse() :?> HttpWebResponse in
-      use st = rs.GetResponseStream() in
-      use sr = new StreamReader(st, Encoding.UTF8) in
-      if rs.StatusCode = HttpStatusCode.OK then
-        sr.ReadToEnd() |> OK
-      else
-        (rs.StatusCode, sr.ReadToEnd()) |> Error
+      try
+        let wr = (WebRequest.Create uri) :?> HttpWebRequest in
+        wr.UserAgent = "KQC (github.com/maybe-eve/KQC)" |> ignore;
+        use rs = wr.GetResponse() :?> HttpWebResponse in
+        use st = rs.GetResponseStream() in
+        use sr = new StreamReader(st, Encoding.UTF8) in
+        if rs.StatusCode = HttpStatusCode.OK then
+          sr.ReadToEnd() |> OK
+        else
+          (rs.StatusCode, sr.ReadToEnd()) |> Error
+      with
+        | :? WebException as e when e.Status = System.Net.WebExceptionStatus.ProtocolError ->
+          ((e.Response :?> HttpWebResponse).StatusCode, e.Status.ToString()) |> Error
+        | e -> (HttpStatusCode.OK, e.ToString()) |> Error
 
     let esiWho id =
       let u = sprintf "https://esi.tech.ccp.is/latest/characters/%i/" id in
@@ -182,6 +187,7 @@ module EVE =
     
     type cachedTypeNameGetter () =
       let dict = new Dictionary<int, string>()
+
       member this.get id =
         if dict.ContainsKey id then
           dict.[id]
@@ -189,6 +195,14 @@ module EVE =
           let s = getTypeNameById id in
           dict.[id] <- s;
           s
+
+      member this.getDict ids =
+        ids |> Seq.filter (dict.ContainsKey >> not) 
+            |> getTypeNameDictById
+            |> Seq.iter (fun x -> dict.[x.Key] <- x.Value)
+        dict
+
+    let SCTNG = cachedTypeNameGetter ()
 
     type cachedSystemInfoGetter () =
       

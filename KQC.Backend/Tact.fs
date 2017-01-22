@@ -128,9 +128,9 @@ module Tactical =
               ) |> Seq.toArray in
             let dic = 
               if not (Seq.isEmpty ids) then
-                getTypeNameDictById ids
+                SCTNG.getDict ids
               else
-                Dictionary() :> IDictionary<int, string>
+                Dictionary()
             in
             ss 
             |> Seq.map (fun (sid, k, l, fts, dts) ->

@@ -91,7 +91,6 @@ namespace KQC
             // 
             // shipChart
             // 
-            this.shipChart.BackColor = System.Drawing.Color.Transparent;
             chartArea1.Name = "ChartArea1";
             this.shipChart.ChartAreas.Add(chartArea1);
             legend1.Enabled = false;
@@ -154,6 +153,7 @@ namespace KQC
             // 
             // tabPage1
             // 
+            this.tabPage1.BackColor = System.Drawing.Color.White;
             this.tabPage1.Controls.Add(this.label2);
             this.tabPage1.Controls.Add(this.label1);
             this.tabPage1.Controls.Add(this.pictureBox1);
@@ -179,8 +179,7 @@ namespace KQC
             this.tabPage2.Padding = new System.Windows.Forms.Padding(3);
             this.tabPage2.Size = new System.Drawing.Size(298, 325);
             this.tabPage2.TabIndex = 1;
-            this.tabPage2.Text = "Gangs & Timezone";
-            this.tabPage2.UseVisualStyleBackColor = true;
+            this.tabPage2.Text = "Gangs & Timezone ";
             // 
             // kosButton
             // 
@@ -216,6 +215,7 @@ namespace KQC
             // 
             // tzChart
             // 
+            this.tzChart.BackColor = System.Drawing.SystemColors.Control;
             this.tzChart.BorderlineColor = System.Drawing.Color.Transparent;
             chartArea2.AxisY.IntervalAutoMode = System.Windows.Forms.DataVisualization.Charting.IntervalAutoMode.VariableCount;
             chartArea2.AxisY.IntervalOffsetType = System.Windows.Forms.DataVisualization.Charting.DateTimeIntervalType.Number;
@@ -233,6 +233,7 @@ namespace KQC
             series2.Legend = "Legend1";
             series2.Name = "Series1";
             series2.SmartLabelStyle.Enabled = false;
+            series2.YValueType = System.Windows.Forms.DataVisualization.Charting.ChartValueType.Int32;
             this.tzChart.Series.Add(series2);
             this.tzChart.Size = new System.Drawing.Size(314, 130);
             this.tzChart.TabIndex = 3;
