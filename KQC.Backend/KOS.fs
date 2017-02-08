@@ -159,6 +159,9 @@ module KOS =
         Action(fun () -> ())
       ))
 
+    let isNpcAndNotMM x =
+      (isNpcCorp x) && (x <> 1000182)
+
     let quickCheck (name : string) =
       let c1 = checkExact name "Pilot" in
       match c1 with
@@ -166,8 +169,8 @@ module KOS =
         | p ->
           match (name |> getCharaIdByName |> esiWho) with
             | Some (pinfo, phist) ->
-              if (isNpcCorp pinfo.CorporationId) && (pinfo.CorporationId <> 1000182) then
-                let hr = phist |> SeqX.skipWhileSafe (fun x -> isNpcCorp x.CorporationId) in
+              if isNpcAndNotMM pinfo.CorporationId then
+                let hr = phist |> SeqX.skipWhileSafe (fun x -> isNpcAndNotMM x.CorporationId) in
                   if (Seq.length hr) > 0 then
                     let clname = (Seq.head hr).CorporationId |> esiCorp |> Option.map (fun (x, _) -> x.CorporationName) |? "" in
                     match (checkExact clname "Corp") with
@@ -260,12 +263,14 @@ module KOS =
                     }
                     |> Async.StartAsTask in
 
+
+
                   let isUnknown = 
-                    if (isNpcCorp who.CorporationId) && (who.CorporationId <> 1000182) then
+                    if isNpcAndNotMM who.CorporationId then
                       print "This pilot is a member of a NPC corp.";
                       rl.Add Reason.NPCCorp;
                       KosResult.Corp("NPC Corp", "", false, KosResult.Error, 0) |> Kos |> obs.OnNext;
-                      let hr = corphist |> SeqX.skipWhileSafe (fun x -> isNpcCorp x.CorporationId) in
+                      let hr = corphist |> SeqX.skipWhileSafe (fun x -> isNpcAndNotMM x.CorporationId) in
                       if Seq.length hr > 0 then
                         let l = (Seq.head hr).CorporationId |> esiCorp |> Option.map (fun (x, _) -> x.CorporationName) |? "" in
                         let lr = checkExact l "Corp" in
