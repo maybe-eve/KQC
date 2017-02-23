@@ -100,7 +100,7 @@ module EVE =
 
     let reqString (uri : string) =
       let wr = (WebRequest.Create uri) :?> HttpWebRequest in
-      wr.UserAgent = "KQC (github.com/maybe-eve/KQC)" |> ignore;
+      wr.UserAgent = "KQC (github.com/maybe-eve/KQC) - please contact maybe-eve in GitHub or Mayvie Takashina in game, if needed" |> ignore;
       use rs = wr.GetResponse() in
       use st = rs.GetResponseStream() in
       use sr = new StreamReader(st, Encoding.UTF8) in
@@ -109,7 +109,7 @@ module EVE =
     let req (uri : string) =
       try
         let wr = (WebRequest.Create uri) :?> HttpWebRequest in
-        wr.UserAgent = "KQC (github.com/maybe-eve/KQC)" |> ignore;
+        wr.UserAgent = "KQC (github.com/maybe-eve/KQC) - please contact maybe-eve in GitHub or Mayvie Takashina in game, if needed" |> ignore;
         use rs = wr.GetResponse() :?> HttpWebResponse in
         use st = rs.GetResponseStream() in
         use sr = new StreamReader(st, Encoding.UTF8) in
